@@ -3,9 +3,6 @@
   "compilerOptions":{
     "rootDir":"./src",
     "outDir":"./dist",
-    "module": "ESNext",
-    "jsx": "react-jsx",
-    "moduleResolution": "bundler",
-    "esModuleInterop": true
+    "target": "ES2023"
   }
 }

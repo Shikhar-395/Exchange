@@ -1,0 +1,67 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main,master]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout the code 
+        uses: actions/checkout@v3
+
+      - name: Setup PNPM  
+        uses: pnpm/action-setup@v2
+        with: 
+          version: 9.0.0
+
+      - name: Setup Node JS 
+        uses: actions/setup-node@v4
+        with: 
+          node-version: '24.11.0'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma client 
+        run: cd packages/db && npx prisma generate 
+
+      - name: Build the project 
+        run: pnpm run build 
+  
+
+  integration-test:
+    runs-on: ubuntu-latest
+
+    env:
+      RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+      DATABASE_URL: ${{ secrets.DATABASE_URL_CI}} 
+
+    steps:
+      - name: Checkout the code 
+        uses: actions/checkout@v3
+
+      - name: Setup PNPM  
+        uses: pnpm/action-setup@v2
+        with: 
+          version: 9.0.0
+
+      - name: Setup Node JS 
+        uses: actions/setup-node@v4
+        with: 
+          node-version: '24.11.0'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+#      - name: Migrate the database
+#        run: cd packages/db && npx prisma migrate deploy 
+#      - name: Generate Client 
+#        run: cd packages/db && npx prisma generate 
+
+      - name: Run integration tests
+        run: cd apps/backend &&  pnpm run test:integration
