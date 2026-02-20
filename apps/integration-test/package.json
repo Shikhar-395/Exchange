@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "chmod +x ./src/scripts/*.sh && ./src/scripts/run-integration.sh"
+    "test": "chmod +x ./src/scripts/*.sh && ./src/scripts/run-integration.sh",
+    "test:ci": "chmod +x ./src/scripts/*.sh && ./src/scripts/run-integration-ci.sh"
   },
   "keywords": [],
   "author": "",
