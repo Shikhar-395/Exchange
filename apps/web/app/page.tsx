@@ -6,7 +6,6 @@ export default function Home() {
           Landing page
         </h1>
       </section>
-
     </main>
   );
 }

@@ -5,12 +5,12 @@ import path from "path";
 import { config } from "dotenv";
 import cors from "cors";
 import { shutdown } from "./lib/utils";
-/*
- INFO: use these to interact with database and send email
+
+/*INFO: use these to interact with database and send emails
 import { prisma } from "@repo/database/client";
 import OtpTemplate from "@repo/email/template/OtpTemplate";
 import { sendEmail } from "@repo/email/email";
-  */
+ */
 
 const app = express();
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -31,6 +31,7 @@ app.get("/health", (req: Request, res: Response) => {
     message: "healthy"
   })
 });
+
 
 app.get("/error", (req: Request, res: Response) => {
   res.status(400).json({
