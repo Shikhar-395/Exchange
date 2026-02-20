@@ -34,10 +34,6 @@ jobs:
   
   integration-test:
     runs-on: ubuntu-latest
-
-    env:
-      DATABASE_URL: ${{ secrets.DATABASE_URL_CI}} 
-
     steps:
       - name: Checkout the code 
         uses: actions/checkout@v3
@@ -56,11 +52,6 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-#      - name: Migrate the database
-#        run: cd packages/db && npx prisma migrate deploy 
-#      - name: Generate Client 
-#        run: cd packages/db && npx prisma generate 
-
       - name: Run integration tests
-        run: cd apps/backend &&  pnpm run test:integration
+        run: cd apps/integration-test &&  pnpm run test
 
