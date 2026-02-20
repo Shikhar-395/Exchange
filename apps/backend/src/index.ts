@@ -3,7 +3,6 @@ import { dirname } from "path";
 import { fileURLToPath } from "url";
 import path from "path";
 import { config } from "dotenv";
-
 import cors from "cors";
 import { shutdown } from "./lib/utils";
 

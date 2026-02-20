@@ -3,8 +3,7 @@
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../../../.." && pwd)"
 
-source "$PROJECT_ROOT/apps/backend/.env"
-PORT="$PORT"
+PORT=3001
 
 function stop_services() {
   echo "🔴 - Stopping backend..."
@@ -16,8 +15,7 @@ function stop_services() {
 
 trap stop_services EXIT INT TERM
 
-source "$PROJECT_ROOT/packages/database/.env"
-DATABASE_URL="$DATABASE_URL"
+DATABASE_URL="postgresql://postgres:nagmani@localhost:5432/postgres"
 
 echo "Starting auxilary services"
 docker compose -f "$PROJECT_ROOT/docker/compose-files/docker-compose-integration-test.yml" up -d --wait
