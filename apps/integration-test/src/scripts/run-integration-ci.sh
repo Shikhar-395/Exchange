@@ -30,7 +30,7 @@ echo "Generate Client"
 cd $PROJECT_ROOT/packages/database && pnpm dlx prisma generate --schema "$PROJECT_ROOT/packages/database/prisma/schema.prisma"
 
 echo '🟡 - Starting backend server...'
-cd $PROJECT_ROOT/apps/backend && pnpm run dev:ci &
+cd $PROJECT_ROOT/apps/backend && PORT=$PORT pnpm run dev:ci &
 BACKEND_PID=$!
 
 echo "backend pid $BACKEND_PID"
