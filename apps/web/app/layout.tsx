@@ -14,7 +14,7 @@ const geistMono = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "Template",
+  title: "Exchange",
   description: "Turborepo + Tailwind + shadcn/ui",
 };
 

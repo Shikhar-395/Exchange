@@ -1,5 +1,5 @@
 import { betterAuth } from "better-auth";
-import { OtpTemplate } from "@repo/email/template/OtpTemplate";
+import { OtpTemplate } from "@repo/email/exchange/OtpTemplate";
 import { emailOTP } from "better-auth/plugins";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { prisma } from "@repo/database/client";

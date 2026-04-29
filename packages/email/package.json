@@ -19,7 +19,7 @@
   "type": "module",
   "exports":{
   "./email":"./src/index.ts",
-  "./template/*":"./src/emailTemplates/*.tsx"
+  "./exchange/*":"./src/emailTemplates/*.tsx"
   },
   "devDependencies": {
     "@types/react": "^19.2.8",

@@ -14,7 +14,7 @@ import { Server } from "http";
 
 /*INFO: use these to interact with database and send emails
 import { prisma } from "@repo/database/client";
-import OtpTemplate from "@repo/email/template/OtpTemplate";
+import OtpTemplate from "@repo/email/exchange/OtpTemplate";
 import { sendEmail } from "@repo/email/email";
  */
 
