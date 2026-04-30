@@ -11,12 +11,9 @@ import axios from "axios";
 import { authMiddleware } from "./middlewares/authMiddleware";
 import { initEmail } from "@repo/email/email";
 import { Server } from "http";
-
-/*INFO: use these to interact with database and send emails
 import { prisma } from "@repo/database/client";
-import OtpTemplate from "@repo/email/exchange/OtpTemplate";
-import { sendEmail } from "@repo/email/email";
- */
+import { RedisManager } from "./redisManager";
+import { connectTimescale } from "./timescale";
 
 const app = express();
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -70,7 +67,7 @@ app.get("/api/v1/todos", authMiddleware, async (req, res) => {
 });
 
 export let server: Server;
-function main() {
+async function main() {
   if (process.env.RESEND_API_KEY) {
     initEmail({
       resendApiKey: process.env.RESEND_API_KEY,
@@ -84,6 +81,16 @@ function main() {
         password: process.env.SMTP_PASSWORD,
       },
     });
+  }
+
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    await RedisManager.connect();
+    await connectTimescale();
+    console.log("connected to auxiliary services");
+  } catch (err) {
+    console.log("failed to connect to auxiliary services:", err);
+    process.exit(1);
   }
 
   server = app.listen(process.env.PORT, () => {

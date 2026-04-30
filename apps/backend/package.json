@@ -9,9 +9,9 @@
     "dev:ci": "pnpm dlx tsx src/index.ts"
   },
   "devDependencies": {
+    "@repo/typescript-config": "workspace:*",
     "@types/cors": "^2.8.19",
-    "@types/express": "^5.0.6",
-    "@repo/typescript-config": "workspace:*"
+    "@types/express": "^5.0.6"
   },
   "keywords": [],
   "author": "",
@@ -19,10 +19,14 @@
   "dependencies": {
     "@repo/database": "workspace:*",
     "@repo/email": "workspace:*",
+    "@types/pg": "^8.16.0",
+    "@types/redis": "^4.0.11",
     "axios": "^1.13.5",
     "better-auth": "^1.5.1",
     "cors": "^2.8.6",
     "dotenv": "^17.3.1",
-    "express": "^5.2.1"
+    "express": "^5.2.1",
+    "pg": "^8.18.0",
+    "redis": "^5.12.1"
   }
 }

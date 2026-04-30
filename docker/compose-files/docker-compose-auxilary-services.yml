@@ -32,3 +32,18 @@ services:
     ports:
       - 1025:1025 # smtp server
       - 8025:8025 # web ui
+
+  timescaledb:
+    image: timescale/timescaledb:latest-pg12
+    container_name: timescaledb
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_DB: exchange 
+      POSTGRES_USER: exchange 
+      POSTGRES_PASSWORD: nagmani 
+    volumes:
+      - timescale-data:/var/lib/postgresql/data
+
+volumes:
+  timescale-data:
