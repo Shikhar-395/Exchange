@@ -23,6 +23,9 @@ importers:
 
   apps/backend:
     dependencies:
+      '@repo/common':
+        specifier: workspace:*
+        version: link:../../packages/common
       '@repo/database':
         specifier: workspace:*
         version: link:../../packages/database
@@ -68,6 +71,19 @@ importers:
         version: 5.0.6
 
   apps/db-processor:
+    dependencies:
+      '@repo/common':
+        specifier: workspace:*
+        version: link:../../packages/common
+      '@repo/database':
+        specifier: workspace:*
+        version: link:../../packages/database
+      '@types/redis':
+        specifier: ^4.0.11
+        version: 4.0.11
+      redis:
+        specifier: ^5.12.1
+        version: 5.12.1
     devDependencies:
       '@repo/typescript-config':
         specifier: 'workspace: *'
@@ -179,6 +195,12 @@ importers:
 
   packages/common:
     dependencies:
+      '@types/redis':
+        specifier: ^4.0.11
+        version: 4.0.11
+      redis:
+        specifier: ^5.12.1
+        version: 5.12.1
       zod:
         specifier: 4.3.5
         version: 4.3.5

@@ -1,5 +1,5 @@
+import { timeScaleClient } from "@repo/database/timescale";
 import { Router, Response, Request } from "express";
-import { timeScaleClient } from "../timescale";
 
 export const klineRouter: Router = Router();
 
@@ -34,7 +34,9 @@ klineRouter.get("/", async (req: Request, res: Response) => {
   try {
     //@ts-ignore
     const result = await timeScaleClient.query(query, [
+      //@ts-ignore
       new Date((startTime * 1000) as string),
+      //@ts-ignore
       new Date((endTime * 1000) as string),
     ]);
     /*INFO:

@@ -12,8 +12,8 @@ import { authMiddleware } from "./middlewares/authMiddleware";
 import { initEmail } from "@repo/email/email";
 import { Server } from "http";
 import { prisma } from "@repo/database/client";
+import { connectTimescale } from "@repo/database/timescale";
 import { RedisManager } from "./redisManager";
-import { connectTimescale } from "./timescale";
 
 const app = express();
 const __dirname = dirname(fileURLToPath(import.meta.url));

@@ -10,15 +10,17 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@types/redis": "^4.0.11",
+    "redis": "^5.12.1",
     "zod": "4.3.5"
   },
-
   "devDependencies": {
     "@repo/typescript-config": "workspace:*"
   },
   "exports": {
     "./zodTypes": "./src/zodTypes.ts",
     "./types": "./src/types.ts",
-    "./consts": "./src/consts.ts"
+    "./consts": "./src/consts.ts",
+    "./redis":"./src/redisManager.ts"
   }
 }
