@@ -1,0 +1,15 @@
+{
+  "name": "db-processor",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "tsx ./src/index.ts"
+  },
+  "devDependencies": {
+    "@repo/typescript-config": "workspace: *"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}
