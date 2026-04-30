@@ -55,6 +55,12 @@ importers:
         specifier: ^5.0.6
         version: 5.0.6
 
+  apps/engine:
+    devDependencies:
+      '@repo/typescript-config':
+        specifier: 'workspace: *'
+        version: link:../../packages/typescript-config
+
   apps/integration-test:
     dependencies:
       '@repo/typescript-config':
