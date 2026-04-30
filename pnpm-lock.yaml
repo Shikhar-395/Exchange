@@ -182,9 +182,18 @@ importers:
 
   apps/websocket:
     dependencies:
+      '@types/redis':
+        specifier: ^4.0.11
+        version: 4.0.11
       '@types/ws':
         specifier: ^8.18.1
         version: 8.18.1
+      redis:
+        specifier: ^5.12.1
+        version: 5.12.1
+      uuid:
+        specifier: ^14.0.0
+        version: 14.0.0
       ws:
         specifier: ^8.20.0
         version: 8.20.0
@@ -4301,6 +4310,11 @@ packages:
 
   uuid@10.0.0:
     resolution: {integrity: sha512-8XkAphELsDnEGrDxUOHB3RGvXz6TeuYSGEZBOjtTtPm2lwhGBjLgOzLHB63IUWfBpNucQjND6d3AOudO+H3RWQ==}
+    deprecated: uuid@10 and below is no longer supported.  For ESM codebases, update to uuid@latest.  For CommonJS codebases, use uuid@11 (but be aware this version will likely be deprecated in 2028).
+    hasBin: true
+
+  uuid@14.0.0:
+    resolution: {integrity: sha512-Qo+uWgilfSmAhXCMav1uYFynlQO7fMFiMVZsQqZRMIXp0O7rR7qjkj+cPvBHLgBqi960QCoo/PH2/6ZtVqKvrg==}
     hasBin: true
 
   valibot@1.2.0:
@@ -8514,6 +8528,8 @@ snapshots:
       react: 19.2.0
 
   uuid@10.0.0: {}
+
+  uuid@14.0.0: {}
 
   valibot@1.2.0(typescript@5.9.2):
     optionalDependencies:
