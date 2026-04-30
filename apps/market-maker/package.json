@@ -11,5 +11,9 @@
   },
   "keywords": [],
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "dependencies": {
+    "@types/axios": "^0.14.4",
+    "axios": "^1.13.5"
+  }
 }

@@ -111,6 +111,13 @@ importers:
         version: 4.0.18(@types/node@22.15.3)(jiti@2.6.1)(lightningcss@1.30.2)(tsx@4.21.0)(yaml@2.8.2)
 
   apps/market-maker:
+    dependencies:
+      '@types/axios':
+        specifier: ^0.14.4
+        version: 0.14.4
+      axios:
+        specifier: ^1.13.5
+        version: 1.13.5
     devDependencies:
       '@repo/typescript-config':
         specifier: 'workspace: *'
@@ -2117,6 +2124,10 @@ packages:
     resolution: {integrity: sha512-0Lu6y5t+tvlTJMTO7oh5NSpJfpg/5D41LlThfepTixPYkJ0sE2Jj0m0f6yYqujBwIXlId87e234+MxG3D3g7kg==}
     peerDependencies:
       react: ^18 || ^19
+
+  '@types/axios@0.14.4':
+    resolution: {integrity: sha512-9JgOaunvQdsQ/qW2OPmE5+hCeUB52lQSolecrFrthct55QekhmXEwT203s20RL+UHtCQc15y3VXpby9E7Kkh/g==}
+    deprecated: This is a stub types definition. axios provides its own type definitions, so you do not need this installed.
 
   '@types/body-parser@1.19.6':
     resolution: {integrity: sha512-HLFeCYgz89uk22N5Qg3dvGvsv46B8GLvKKo1zKG4NybA8U2DiEO3w9lqGg29t/tfLRJpJ6iQxnVw4OnB7MoM9g==}
@@ -6078,6 +6089,12 @@ snapshots:
     dependencies:
       '@tanstack/query-core': 5.90.20
       react: 19.2.0
+
+  '@types/axios@0.14.4':
+    dependencies:
+      axios: 1.13.5
+    transitivePeerDependencies:
+      - debug
 
   '@types/body-parser@1.19.6':
     dependencies:
