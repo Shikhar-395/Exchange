@@ -60,13 +60,11 @@ export type MessageFromEngine =
       payload: {
         orderId: string;
         executedQty: number;
-        fills: [
-          {
-            price: string;
-            qty: number;
-            tradeId: number;
-          },
-        ];
+        fills: {
+          price: string;
+          qty: number;
+          tradeId: number;
+        }[];
       };
     }
   | {
