@@ -14,7 +14,7 @@ export function SocialAuthButtons() {
   async function handleSocialSignIn(provider: Provider) {
     try {
       setLoadingProvider(provider);
-      const callbackURL = `${window.location.origin}/dashboard`;
+      const callbackURL = `${window.location.origin}/markets`;
       const { error } = await authClient.signIn.social({
         provider,
         callbackURL,

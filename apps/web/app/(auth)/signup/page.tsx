@@ -81,7 +81,7 @@ export default function Page() {
       } else {
         toast.success("Email verified successfully!");
         setOtpOpen(false);
-        router.push("/signin");
+        router.push("/markets");
       }
     },
     onError: (err) => {
