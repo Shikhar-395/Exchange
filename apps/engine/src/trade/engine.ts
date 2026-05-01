@@ -404,49 +404,22 @@ export class Engine {
   ) {
     if (side === "buy") {
       fills.forEach((fill) => {
-        // Update quote asset balance
-        //@ts-ignore
-        this.balances.get(fill.otherUserId)[quoteAsset].available =
-          this.balances.get(fill.otherUserId)?.[quoteAsset].available +
-          fill.qty * fill.price;
-
-        //@ts-ignore
-        this.balances.get(userId)[quoteAsset].locked =
-          this.balances.get(userId)?.[quoteAsset].locked -
-          fill.qty * fill.price;
-
-        // Update base asset balance
-
-        //@ts-ignore
-        this.balances.get(fill.otherUserId)[baseAsset].locked =
-          this.balances.get(fill.otherUserId)?.[baseAsset].locked - fill.qty;
-
-        //@ts-ignore
-        this.balances.get(userId)[baseAsset].available =
-          this.balances.get(userId)?.[baseAsset].available + fill.qty;
+        const fillPrice = Number(fill.price);
+        this.balances.get(fill.otherUserId)![quoteAsset]!.available +=
+          fill.qty * fillPrice;
+        this.balances.get(userId)![quoteAsset]!.locked -= fill.qty * fillPrice;
+        this.balances.get(fill.otherUserId)![baseAsset]!.locked -= fill.qty;
+        this.balances.get(userId)![baseAsset]!.available += fill.qty;
       });
     } else {
       fills.forEach((fill) => {
-        // Update quote asset balance
-        //@ts-ignore
-        this.balances.get(fill.otherUserId)[quoteAsset].locked =
-          this.balances.get(fill.otherUserId)?.[quoteAsset].locked -
-          fill.qty * fill.price;
-
-        //@ts-ignore
-        this.balances.get(userId)[quoteAsset].available =
-          this.balances.get(userId)?.[quoteAsset].available +
-          fill.qty * fill.price;
-
-        // Update base asset balance
-
-        //@ts-ignore
-        this.balances.get(fill.otherUserId)[baseAsset].available =
-          this.balances.get(fill.otherUserId)?.[baseAsset].available + fill.qty;
-
-        //@ts-ignore
-        this.balances.get(userId)[baseAsset].locked =
-          this.balances.get(userId)?.[baseAsset].locked - fill.qty;
+        const fillPrice = Number(fill.price);
+        this.balances.get(fill.otherUserId)![quoteAsset]!.locked -=
+          fill.qty * fillPrice;
+        this.balances.get(userId)![quoteAsset]!.available +=
+          fill.qty * fillPrice;
+        this.balances.get(fill.otherUserId)![baseAsset]!.available += fill.qty;
+        this.balances.get(userId)![baseAsset]!.locked -= fill.qty;
       });
     }
   }
@@ -467,14 +440,9 @@ export class Engine {
       ) {
         throw new Error("Insufficient funds");
       }
-      //@ts-ignore
-      this.balances.get(userId)[quoteAsset].available =
-        this.balances.get(userId)?.[quoteAsset].available -
+      this.balances.get(userId)![quoteAsset]!.available -=
         Number(quantity) * Number(price);
-
-      //@ts-ignore
-      this.balances.get(userId)[quoteAsset].locked =
-        this.balances.get(userId)?.[quoteAsset].locked +
+      this.balances.get(userId)![quoteAsset]!.locked +=
         Number(quantity) * Number(price);
     } else {
       if (
@@ -483,13 +451,8 @@ export class Engine {
       ) {
         throw new Error("Insufficient funds");
       }
-      //@ts-ignore
-      this.balances.get(userId)[baseAsset].available =
-        this.balances.get(userId)?.[baseAsset].available - Number(quantity);
-
-      //@ts-ignore
-      this.balances.get(userId)[baseAsset].locked =
-        this.balances.get(userId)?.[baseAsset].locked + Number(quantity);
+      this.balances.get(userId)![baseAsset]!.available -= Number(quantity);
+      this.balances.get(userId)![baseAsset]!.locked += Number(quantity);
     }
   }
 
