@@ -21,6 +21,9 @@
     "./zodTypes": "./src/zodTypes.ts",
     "./types": "./src/types.ts",
     "./consts": "./src/consts.ts",
-    "./redis":"./src/redisManager.ts"
+    "./redis":"./src/redisManager.ts",
+    "./wsType":"./src/wsType.ts",
+    "./trade":"./src/trade.ts",
+    "./orderbook":"./src/orderbook.ts"
   }
 }

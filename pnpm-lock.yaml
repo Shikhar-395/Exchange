@@ -90,7 +90,17 @@ importers:
         version: link:../../packages/typescript-config
 
   apps/engine:
+    dependencies:
+      '@types/redis':
+        specifier: ^4.0.11
+        version: 4.0.11
+      redis:
+        specifier: ^5.12.1
+        version: 5.12.1
     devDependencies:
+      '@repo/common':
+        specifier: 'workspace: *'
+        version: link:../../packages/common
       '@repo/typescript-config':
         specifier: 'workspace: *'
         version: link:../../packages/typescript-config
@@ -205,8 +215,11 @@ importers:
         specifier: ^8.20.0
         version: 8.20.0
     devDependencies:
+      '@repo/common':
+        specifier: workspace:*
+        version: link:../../packages/common
       '@repo/typescript-config':
-        specifier: 'workspace: *'
+        specifier: workspace:*
         version: link:../../packages/typescript-config
 
   packages/common:

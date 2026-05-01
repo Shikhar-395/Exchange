@@ -1,5 +1,5 @@
+import { DbMessage } from "@repo/common/trade";
 import { createClient, RedisClientType } from "redis";
-import { DbMessage } from "./types";
 
 async function main() {
   const redisClient: RedisClientType = createClient();

@@ -1,6 +1,10 @@
 import { WebSocket } from "ws";
-import { OutgoingMessage } from "./types/out";
-import { IncomingMessage, SUBSCRIBE, UNSUBSCRIBE } from "./types/in";
+import {
+  IncomingMessage,
+  SUBSCRIBE,
+  UNSUBSCRIBE,
+  WsMessage,
+} from "@repo/common/wsType";
 import { SubscriptionManager } from "./subscriptionManager";
 export class User {
   private id: string;
@@ -21,7 +25,7 @@ export class User {
     this.subscriptions = this.subscriptions.filter((x) => x != unsubscribe);
   }
 
-  emit(message: OutgoingMessage) {
+  emit(message: WsMessage) {
     this.ws.send(JSON.stringify(message));
   }
 
