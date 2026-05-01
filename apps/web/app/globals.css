@@ -1,1 +1,26 @@
 @import "@repo/ui/globals.css";
+
+@theme inline {
+  --color-base-background-l1: rgb(20, 21, 27);
+  --color-base-background-l2: rgb(32, 33, 39);
+  --color-base-background-l3: rgb(32, 33, 39);
+  --color-base-border-light: rgb(32, 33, 39);
+  --color-base-border-med: #cccccc;
+  --color-base-text-high-emphasis: rgb(244, 244, 246);
+  --color-base-text-med-emphasis: rgb(150, 152, 161);
+  --color-accent-blue: rgb(76, 148, 255);
+  --color-green-primary-button-background: rgb(0, 194, 120);
+  --color-green-primary-button-text: rgb(20, 21, 27);
+  --color-green-text: rgb(0, 194, 120);
+  --color-red-text: rgb(234, 56, 59);
+  --color-green-background-transparent: rgba(0, 194, 120, 0.12);
+  --color-red-background-transparent: rgba(234, 56, 59, 0.12);
+  --color-green-border: rgba(0, 194, 120, 0.4);
+  --color-red-border: rgba(234, 56, 59, 0.5);
+}
+
+.exchange-shell {
+  background: #0e0f14;
+  color: rgb(244, 244, 246);
+  min-height: calc(100vh - 56px);
+}

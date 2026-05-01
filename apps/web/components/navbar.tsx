@@ -12,12 +12,26 @@ export function Navbar() {
       )}
     >
       <div className="mx-auto flex h-14 w-full max-w-screen-2xl items-center justify-between px-4 md:px-8">
-        <Link href="/" className="flex items-center gap-2">
-          <div className="grid size-7 place-items-center rounded-full border border-[var(--auth-border)] bg-[var(--auth-surface)] text-xs font-bold text-[var(--auth-text)]">
-            E
-          </div>
-          <span className="text-lg font-bold tracking-tight">Exchange</span>
-        </Link>
+        <div className="flex items-center gap-6">
+          <Link href="/" className="flex items-center gap-2">
+            <div className="grid size-7 place-items-center rounded-full border border-[var(--auth-border)] bg-[var(--auth-surface)] text-xs font-bold text-[var(--auth-text)]">
+              E
+            </div>
+            <span className="text-lg font-bold tracking-tight">Exchange</span>
+          </Link>
+          <Link
+            href="/markets"
+            className="text-sm text-[var(--auth-text-muted)] hover:text-[var(--auth-text)]"
+          >
+            Markets
+          </Link>
+          <Link
+            href="/trade/SOL_USDC"
+            className="text-sm text-[var(--auth-text-muted)] hover:text-[var(--auth-text)]"
+          >
+            Trade
+          </Link>
+        </div>
         <nav className="flex items-center gap-2">
           <UserMenu />
           <ThemeToggle />
