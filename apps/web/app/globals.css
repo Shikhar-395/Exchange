@@ -1,13 +1,13 @@
 @import "@repo/ui/globals.css";
 
 @theme inline {
-  --color-base-background-l1: rgb(20, 21, 27);
-  --color-base-background-l2: rgb(32, 33, 39);
-  --color-base-background-l3: rgb(32, 33, 39);
-  --color-base-border-light: rgb(32, 33, 39);
-  --color-base-border-med: #cccccc;
-  --color-base-text-high-emphasis: rgb(244, 244, 246);
-  --color-base-text-med-emphasis: rgb(150, 152, 161);
+  --color-base-background-l1: var(--exchange-surface);
+  --color-base-background-l2: var(--exchange-surface-2);
+  --color-base-background-l3: var(--exchange-surface-2);
+  --color-base-border-light: var(--exchange-border);
+  --color-base-border-med: var(--exchange-border-strong);
+  --color-base-text-high-emphasis: var(--exchange-text);
+  --color-base-text-med-emphasis: var(--exchange-text-muted);
   --color-accent-blue: rgb(76, 148, 255);
   --color-green-primary-button-background: rgb(0, 194, 120);
   --color-green-primary-button-text: rgb(20, 21, 27);
@@ -19,8 +19,28 @@
   --color-red-border: rgba(234, 56, 59, 0.5);
 }
 
+:root {
+  --exchange-bg: #f6f8fc;
+  --exchange-surface: #ffffff;
+  --exchange-surface-2: #eef2f9;
+  --exchange-border: #d7deea;
+  --exchange-border-strong: #bec9dc;
+  --exchange-text: #0d1526;
+  --exchange-text-muted: #52607a;
+}
+
+.dark {
+  --exchange-bg: #0e0f14;
+  --exchange-surface: rgb(20, 21, 27);
+  --exchange-surface-2: rgb(32, 33, 39);
+  --exchange-border: rgb(32, 33, 39);
+  --exchange-border-strong: #cccccc;
+  --exchange-text: rgb(244, 244, 246);
+  --exchange-text-muted: rgb(150, 152, 161);
+}
+
 .exchange-shell {
-  background: #0e0f14;
-  color: rgb(244, 244, 246);
+  background: var(--exchange-bg);
+  color: var(--exchange-text);
   min-height: calc(100vh - 56px);
 }
