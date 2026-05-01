@@ -21,8 +21,11 @@ model User {
   image         String?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
-  sessions      Session[]
-  accounts      Account[]
+  sessions           Session[]
+  accounts           Account[]
+  balances           UserBalance[]
+  onrampTransactions OnrampTransaction[]
+  orders             Order[]
 
   @@unique([email])
   @@map("user")
@@ -74,4 +77,95 @@ model Verification {
 
   @@unique([identifier])
   @@map("verification")
+}
+
+model Market {
+  symbol        String         @id
+  baseCurrency  String
+  quoteCurrency String
+  name          String
+  iconUrl       String?
+  category      MarketCategory @default(SPOT)
+  tags          String[]
+  minOrderSize  Decimal        @default(0.001)
+  tickSize      Decimal        @default(0.01)
+  isActive      Boolean        @default(true)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  @@map("market")
+}
+
+enum MarketCategory {
+  SPOT
+  FUTURES
+}
+
+model UserBalance {
+  id        String  @id @default(cuid())
+  userId    String
+  currency  String
+  available Decimal @default(0)
+  locked    Decimal @default(0)
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, currency])
+  @@index([userId])
+  @@map("user_balance")
+}
+
+model OnrampTransaction {
+  id        String       @id @default(cuid())
+  userId    String
+  currency  String
+  amount    Decimal
+  status    OnrampStatus @default(PENDING)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("onramp_transaction")
+}
+
+enum OnrampStatus {
+  PENDING
+  COMPLETED
+  FAILED
+}
+
+model Order {
+  id        String      @id @default(cuid())
+  userId    String
+  market    String
+  side      OrderSide
+  type      OrderType   @default(LIMIT)
+  price     Decimal?
+  quantity  Decimal
+  filled    Decimal     @default(0)
+  status    OrderStatus @default(OPEN)
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([market, status])
+  @@map("order")
+}
+
+enum OrderSide {
+  BUY
+  SELL
+}
+
+enum OrderType {
+  LIMIT
+  MARKET
+}
+
+enum OrderStatus {
+  OPEN
+  PARTIALLY_FILLED
+  FILLED
+  CANCELLED
 }
