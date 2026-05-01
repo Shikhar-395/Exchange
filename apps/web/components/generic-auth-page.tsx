@@ -17,6 +17,9 @@ interface GenericAuthPageProps {
   colors?: AuthThemeColors;
 }
 
+const BRAND_LOGO_URL =
+  "https://cdn.dribbble.com/userupload/45977907/file/6c9ac88b0b8e86d0cabf474a21f187e6.jpg?resize=1600x1200&vertical=center";
+
 export function GenericAuthPage({
   title,
   subtitle,
@@ -38,9 +41,12 @@ export function GenericAuthPage({
     >
       <div className="text-center mb-8">
         <Link href="/" className="inline-flex items-center gap-2 mb-6">
-          <div className="grid size-8 place-items-center rounded-full border border-[var(--auth-border)] bg-[var(--auth-surface)] text-xs font-bold text-[var(--auth-text)]">
-            E
-          </div>
+          <img
+            src={BRAND_LOGO_URL}
+            alt="Exchange logo"
+            className="size-8 rounded-full border border-[var(--auth-border)] object-cover"
+            loading="eager"
+          />
           <span className="text-lg font-bold text-[var(--auth-text)]">
             Exchange
           </span>

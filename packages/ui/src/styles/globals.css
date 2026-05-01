@@ -61,12 +61,12 @@
 
 .dark {
   --app-color-foreground: oklch(0.985 0 0);
-  --auth-base: #05060a;
-  --auth-mid: #06070b;
+  --auth-base: #0e0f14;
+  --auth-mid: #12141c;
   --auth-overlay: rgba(0, 0, 0, 0.35);
   --auth-top-glow: rgba(255, 255, 255, 0.1);
-  --auth-surface: rgba(0, 0, 0, 0.6);
-  --auth-surface-strong: rgba(255, 255, 255, 0.03);
+  --auth-surface: rgba(22, 24, 32, 0.78);
+  --auth-surface-strong: rgba(28, 31, 41, 0.88);
   --auth-border: rgba(255, 255, 255, 0.12);
   --auth-text: rgba(255, 255, 255, 0.95);
   --auth-text-muted: rgba(255, 255, 255, 0.62);

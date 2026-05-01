@@ -4,6 +4,9 @@ import { Ticker as TickerType } from "../utils/types";
 import { getTicker } from "../utils/httpClient";
 import { SignalingManager } from "../utils/SignalingManager";
 
+const BRAND_LOGO_URL =
+  "https://cdn.dribbble.com/userupload/45977907/file/6c9ac88b0b8e86d0cabf474a21f187e6.jpg?resize=1600x1200&vertical=center";
+
 export const MarketBar = ({ market }: { market: string }) => {
   const [ticker, setTicker] = useState<TickerType | null>(null);
 
@@ -115,13 +118,13 @@ function TickerHeader({ market }: { market: string }) {
           alt={`${market} Logo`}
           loading="lazy"
           className="z-10 rounded-full h-6 w-6 mt-4"
-          src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTVvBqZC_Q1TSYObZaMvK0DRFeHZDUtVMh08Q&s"
+          src={BRAND_LOGO_URL}
         />
         <img
           alt="Quote Logo"
           loading="lazy"
           className="h-6 w-6 -ml-2 mt-4 rounded-full"
-          src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTVvBqZC_Q1TSYObZaMvK0DRFeHZDUtVMh08Q&s"
+          src={BRAND_LOGO_URL}
         />
       </div>
       <button type="button">

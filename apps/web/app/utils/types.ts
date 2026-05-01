@@ -26,14 +26,18 @@ export interface Depth {
 }
 
 export interface Ticker {
-  firstPrice: string;
-  high: string;
-  lastPrice: string;
-  low: string;
-  priceChange: string;
-  priceChangePercent: string;
-  quoteVolume: string;
   symbol: string;
-  trades: string;
-  volume: string;
+  name: string;
+  baseCurrency: string;
+  quoteCurrency: string;
+  category: "SPOT" | "FUTURES";
+  firstPrice: string | null;
+  high: string | null;
+  lastPrice: string | null;
+  low: string | null;
+  priceChange: string | null;
+  priceChangePercent: string | null;
+  quoteVolume: string | null;
+  trades: string | null;
+  volume: string | null;
 }

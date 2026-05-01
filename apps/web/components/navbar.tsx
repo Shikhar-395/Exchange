@@ -3,6 +3,9 @@ import { cn } from "@repo/ui/lib/utils";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { UserMenu } from "@/components/user-menu";
 
+const BRAND_LOGO_URL =
+  "https://cdn.dribbble.com/userupload/45977907/file/6c9ac88b0b8e86d0cabf474a21f187e6.jpg?resize=1600x1200&vertical=center";
+
 export function Navbar() {
   return (
     <header
@@ -14,9 +17,12 @@ export function Navbar() {
       <div className="mx-auto flex h-14 w-full max-w-screen-2xl items-center justify-between px-4 md:px-8">
         <div className="flex items-center gap-6">
           <Link href="/" className="flex items-center gap-2">
-            <div className="grid size-7 place-items-center rounded-full border border-[var(--auth-border)] bg-[var(--auth-surface)] text-xs font-bold text-[var(--auth-text)]">
-              E
-            </div>
+            <img
+              src={BRAND_LOGO_URL}
+              alt="Exchange logo"
+              className="size-7 rounded-full border border-[var(--auth-border)] object-cover"
+              loading="eager"
+            />
             <span className="text-lg font-bold tracking-tight">Exchange</span>
           </Link>
           <Link
