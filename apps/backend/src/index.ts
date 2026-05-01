@@ -14,6 +14,11 @@ import { Server } from "http";
 import { prisma } from "@repo/database/client";
 import { connectTimescale } from "@repo/database/timescale";
 import { RedisManager } from "./redisManager";
+import { orderRouter } from "./router/orderRouter";
+import { depthRouter } from "./router/depthRouter";
+import { tradesRouter } from "./router/tradesRouter";
+import { klineRouter } from "./router/klineRouter";
+import { tickersRouter } from "./router/tickerRouter";
 
 const app = express();
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -57,6 +62,12 @@ app.get("/error", (req: Request, res: Response) => {
     message: "error",
   });
 });
+
+app.use("/api/v1/order", orderRouter);
+app.use("/api/v1/depth", depthRouter);
+app.use("/api/v1/trades", tradesRouter);
+app.use("/api/v1/klines", klineRouter);
+app.use("/api/v1/tickers", tickersRouter);
 
 app.get("/api/v1/todos", authMiddleware, async (req, res) => {
   const todos = await axios.get("https://dummyjson.com/todos");

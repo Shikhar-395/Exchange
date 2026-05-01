@@ -10,7 +10,7 @@ import {
   TRADE_ADDED,
 } from "@repo/common/consts";
 import { RedisManager } from "../redisManager";
-import { MessageToEngine } from "@repo/common/types";
+import { MessageToEngine } from "@repo/common/engineMessages";
 import { Orderbook } from "./orderbook";
 import { Fill, Order } from "@repo/common/orderbook";
 

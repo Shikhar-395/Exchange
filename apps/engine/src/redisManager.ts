@@ -1,7 +1,7 @@
 import { createClient, RedisClientType } from "redis";
-import { DbMessage } from "@repo/common/trade";
-import { WsMessage } from "@repo/common/wsType";
-import { MessageFromEngine } from "@repo/common/types";
+import { DbMessage } from "@repo/common/dbMessages";
+import { WsMessage } from "@repo/common/wsMessages";
+import { MessageFromEngine } from "@repo/common/engineMessages";
 
 // to not accidentally create multiple connections to redis
 export class RedisManager {

@@ -4,7 +4,7 @@ import {
   SUBSCRIBE,
   UNSUBSCRIBE,
   WsMessage,
-} from "@repo/common/wsType";
+} from "@repo/common/wsMessages";
 import { SubscriptionManager } from "./subscriptionManager";
 export class User {
   private id: string;

@@ -1,4 +1,4 @@
-import { DbMessage } from "@repo/common/trade";
+import { DbMessage } from "@repo/common/dbMessages";
 import { timeScaleClient } from "@repo/database/timescale";
 import { createClient, RedisClientType } from "redis";
 

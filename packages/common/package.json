@@ -19,11 +19,10 @@
   },
   "exports": {
     "./zodTypes": "./src/zodTypes.ts",
-    "./types": "./src/types.ts",
+    "./engineMessages": "./src/engineMessages.ts",
+    "./dbMessages": "./src/dbMessages.ts",
+    "./wsMessages": "./src/wsMessages.ts",
     "./consts": "./src/consts.ts",
-    "./redis":"./src/redisManager.ts",
-    "./wsType":"./src/wsType.ts",
-    "./trade":"./src/trade.ts",
-    "./orderbook":"./src/orderbook.ts"
+    "./orderbook": "./src/orderbook.ts"
   }
 }

@@ -1,4 +1,7 @@
 import { createClient, RedisClientType } from "redis";
+import { randomUUID } from "crypto";
+import { MessageToEngine } from "@repo/common/engineMessages";
+import { MessageFromEngine } from "@repo/common/engineMessages";
 
 // to not accidentally create multiple connections to redis
 export class RedisManager {
@@ -27,5 +30,19 @@ export class RedisManager {
       );
     }
     return this.instance;
+  }
+
+  public sendAndAwait(message: MessageToEngine): Promise<MessageFromEngine> {
+    return new Promise<MessageFromEngine>((resolve) => {
+      const id = randomUUID();
+      this.client.subscribe(id, (msg) => {
+        this.client.unsubscribe(id);
+        resolve(JSON.parse(msg));
+      });
+      this.publisher.lPush(
+        "messages",
+        JSON.stringify({ clientId: id, message }),
+      );
+    });
   }
 }
