@@ -19,6 +19,8 @@ import { depthRouter } from "./router/depthRouter";
 import { tradesRouter } from "./router/tradesRouter";
 import { klineRouter } from "./router/klineRouter";
 import { tickersRouter } from "./router/tickerRouter";
+import { openInterestRouter } from "./router/openInterestRouter";
+import { marketDataKlinesRouter } from "./router/marketDataKlinesRouter";
 
 const app = express();
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -68,6 +70,8 @@ app.use("/api/v1/depth", depthRouter);
 app.use("/api/v1/trades", tradesRouter);
 app.use("/api/v1/klines", klineRouter);
 app.use("/api/v1/tickers", tickersRouter);
+app.use("/api/v1/openInterest", openInterestRouter);
+app.use("/wapi/v1/marketDataKlines", marketDataKlinesRouter);
 
 app.get("/api/v1/todos", authMiddleware, async (req, res) => {
   const todos = await axios.get("https://dummyjson.com/todos");

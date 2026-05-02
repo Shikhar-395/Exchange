@@ -41,3 +41,21 @@ export interface Ticker {
   trades: string | null;
   volume: string | null;
 }
+
+export interface OpenInterest {
+  openInterest: string;
+  symbol: string;
+  timestamp: number;
+}
+
+export interface SparklinePoint {
+  close: string;
+  end: string;
+}
+
+export interface MarketDataKlines {
+  data: SparklinePoint[];
+  symbol: string;
+}
+
+export type MarketDataKlinesResponse = MarketDataKlines[];

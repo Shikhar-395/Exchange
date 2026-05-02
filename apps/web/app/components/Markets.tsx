@@ -3,7 +3,48 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Ticker } from "../utils/types";
-import { getTickers } from "../utils/httpClient";
+import {
+  getMarketDataKlines,
+  getOpenInterest,
+  getTickers,
+} from "../utils/httpClient";
+
+function formatUsd(value: string | null): string {
+  if (!value) return "—";
+  const num = Number(value);
+  if (num >= 1_000_000) return `$${Math.floor(num / 100_000) / 10}M`;
+  if (num >= 1_000) return `$${Math.floor(num / 100) / 10}K`;
+  return `$${num.toFixed(2)}`;
+}
+
+function Sparkline({ points }: { points: number[] }) {
+  if (points.length < 2)
+    return <span className="text-sm text-[var(--auth-text-muted)]">—</span>;
+  const weekUp = points[points.length - 1] >= points[0];
+  const min = Math.min(...points);
+  const max = Math.max(...points);
+  const range = max - min || 1;
+  const w = 80;
+  const h = 30;
+  const coords = points
+    .map(
+      (p, i) =>
+        `${(i / (points.length - 1)) * w},${h - ((p - min) / range) * h}`,
+    )
+    .join(" ");
+  return (
+    <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`}>
+      <polyline
+        points={coords}
+        fill="none"
+        stroke={weekUp ? "#4ade80" : "#f87171"}
+        strokeWidth="1.5"
+        strokeLinejoin="round"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
 
 type Category = "SPOT" | "FUTURES";
 const PINNED_TOKEN_ORDER = [
@@ -59,12 +100,29 @@ const topSections = [
 
 export const Markets = () => {
   const [tickers, setTickers] = useState<Ticker[]>();
-  const [category, setCategory] = useState<Category>("SPOT");
+  const [category, setCategory] = useState<Category>("FUTURES");
+  const [oiMap, setOiMap] = useState<Map<string, string>>(new Map());
+  const [klineMap, setKlineMap] = useState<Map<string, number[]>>(new Map());
 
   useEffect(() => {
     getTickers()
       .then(setTickers)
       .catch(() => setTickers([]));
+
+    getOpenInterest()
+      .then((data) =>
+        setOiMap(new Map(data.map((d) => [d.symbol, d.openInterest]))),
+      )
+      .catch(() => {});
+
+    getMarketDataKlines()
+      .then((arr) => {
+        const map = new Map(
+          arr.map((d) => [d.symbol, d.data.map((p) => Number(p.close))]),
+        );
+        setKlineMap(map);
+      })
+      .catch(() => {});
   }, []);
 
   const filtered = tickers?.filter((t) => {
@@ -207,7 +265,7 @@ export const Markets = () => {
                 "Name",
                 "Price",
                 "24h Volume",
-                "Open Interest",
+                category === "FUTURES" ? "Open Interest" : "Market Cap",
                 "24h Change",
                 "Last 7 Days",
               ].map((h) => (
@@ -222,7 +280,13 @@ export const Markets = () => {
           </thead>
           <tbody>
             {ordered?.map((m) => (
-              <MarketRow key={m.symbol} market={m} />
+              <MarketRow
+                key={m.symbol}
+                market={m}
+                category={category}
+                openInterest={oiMap.get(m.symbol)}
+                klinePoints={klineMap.get(m.symbol)}
+              />
             ))}
           </tbody>
         </table>
@@ -248,12 +312,29 @@ export const Markets = () => {
   );
 };
 
-function MarketRow({ market }: { market: Ticker }) {
+function MarketRow({
+  market,
+  category,
+  openInterest,
+  klinePoints,
+}: {
+  market: Ticker;
+  category: "SPOT" | "FUTURES";
+  openInterest?: string;
+  klinePoints?: number[];
+}) {
   const router = useRouter();
   const change = market.priceChangePercent
     ? Number(market.priceChangePercent)
     : null;
   const isPositive = change !== null && change >= 0;
+
+  const thirdColValue =
+    category === "FUTURES"
+      ? openInterest && market.lastPrice
+        ? formatUsd(String(Number(openInterest) * Number(market.lastPrice)))
+        : "—"
+      : "—";
   const baseToken = (
     market.baseCurrency ||
     market.symbol.split(/[_-]/)[0] ||
@@ -295,17 +376,19 @@ function MarketRow({ market }: { market: Ticker }) {
       </td>
       <td className="px-4 py-3">
         <span className="text-sm font-medium tabular-nums text-[var(--auth-text)]">
-          {market.lastPrice ?? "—"}
+          {market.lastPrice
+            ? `$${Number(market.lastPrice).toLocaleString()}`
+            : "—"}
         </span>
       </td>
       <td className="px-4 py-3">
         <span className="text-sm tabular-nums text-[var(--auth-text-muted)]">
-          {market.volume ?? "—"}
+          {formatUsd(market.quoteVolume)}
         </span>
       </td>
       <td className="px-4 py-3">
         <span className="text-sm tabular-nums text-[var(--auth-text-muted)]">
-          {market.quoteVolume ?? "—"}
+          {thirdColValue}
         </span>
       </td>
       <td className="px-4 py-3">
@@ -323,7 +406,7 @@ function MarketRow({ market }: { market: Ticker }) {
         )}
       </td>
       <td className="px-4 py-3">
-        <span className="text-sm text-[var(--auth-text-muted)]">—</span>
+        <Sparkline points={klinePoints ?? []} />
       </td>
     </tr>
   );
