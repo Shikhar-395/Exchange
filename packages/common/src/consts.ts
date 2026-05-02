@@ -8,4 +8,4 @@ export const GET_DEPTH = "GET_DEPTH";
 export const TRADE_ADDED = "TRADE_ADDED";
 export const ORDER_UPDATE = "ORDER_UPDATE";
 
-export const BASE_CURRENCY = "INR";
+export const BASE_CURRENCY = "USDC";

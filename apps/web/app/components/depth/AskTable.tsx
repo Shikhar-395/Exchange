@@ -64,7 +64,7 @@ function Ask({
       />
       <div className="flex justify-between text-xs w-full">
         <div>{price}</div>
-        <div>{quantity}</div>
+        <div>{Number(quantity).toFixed(3)}</div>
         <div>{total?.toFixed(2)}</div>
       </div>
     </div>

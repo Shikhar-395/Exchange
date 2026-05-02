@@ -1,7 +1,7 @@
 import { Ticker } from "./types";
 
 export const BASE_URL =
-  process.env.NEXT_PUBLIC_EXCHANGE_WS_URL ?? "ws://localhost:3001";
+  process.env.NEXT_PUBLIC_EXCHANGE_WS_URL ?? "ws://localhost:3002";
 
 type Callback = { callback: (data: any) => void; id: string };
 
@@ -51,6 +51,15 @@ export class SignalingManager {
           }
           if (type === "depth") {
             callback({ bids: message.data.b, asks: message.data.a });
+          }
+          if (type === "trade") {
+            callback({
+              price: message.data.p,
+              quantity: message.data.q,
+              tradeId: message.data.t,
+              isBuyerMaker: message.data.m,
+              symbol: message.data.s,
+            });
           }
         });
       }

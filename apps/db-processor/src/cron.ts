@@ -1,15 +1,33 @@
 import { timeScaleClient } from "@repo/database/timescale";
 
 async function refreshViews() {
-  await timeScaleClient.query("REFRESH MATERIALIZED VIEW klines_1m");
-  await timeScaleClient.query("REFRESH MATERIALIZED VIEW klines_1h");
-  await timeScaleClient.query("REFRESH MATERIALIZED VIEW klines_1w");
-
-  console.log("Materialized views refreshed successfully");
+  await refresh1m();
+  await refresh1h();
+  await refresh1w();
+  console.log("Materialized views refreshed");
 }
 
-refreshViews().catch(console.error);
+async function refresh1m() {
+  await timeScaleClient.query("REFRESH MATERIALIZED VIEW klines_1m");
+}
 
-setInterval(() => {
-  refreshViews();
-}, 1000 * 10);
+async function refresh1h() {
+  await timeScaleClient.query("REFRESH MATERIALIZED VIEW klines_1h");
+}
+
+async function refresh1w() {
+  await timeScaleClient.query("REFRESH MATERIALIZED VIEW klines_1w");
+}
+
+export function startCron() {
+  refreshViews().catch(console.error);
+  setInterval(() => refresh1m().catch(console.error), 10_000);
+  setInterval(() => refresh1h().catch(console.error), 60_000);
+  setInterval(() => refresh1w().catch(console.error), 60 * 60_000);
+  console.log("cron started");
+}
+
+// standalone: pnpm cron
+if (process.argv[1]?.endsWith("cron.ts")) {
+  timeScaleClient.connect().then(startCron).catch(console.error);
+}

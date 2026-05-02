@@ -4,32 +4,36 @@ import { Order, Fill } from "@repo/common/orderbook";
 export class Orderbook {
   bids: Order[];
   asks: Order[];
+  market: string;
   baseAsset: string;
-  quoteAsset: string = BASE_CURRENCY;
+  quoteAsset: string;
   lastTradeId: number;
   currentPrice: number;
 
   constructor(
-    baseAsset: string,
+    market: string,
     bids: Order[],
     asks: Order[],
     lastTradeId: number,
     currentPrice: number,
   ) {
+    this.market = market;
+    const parts = market.split("_");
+    this.baseAsset = parts[0] ?? "";
+    this.quoteAsset = parts[1] ?? BASE_CURRENCY;
     this.bids = bids;
     this.asks = asks;
-    this.baseAsset = baseAsset;
     this.lastTradeId = lastTradeId || 0;
     this.currentPrice = currentPrice || 0;
   }
 
   ticker() {
-    return `${this.baseAsset}_${this.quoteAsset}`;
+    return this.market;
   }
 
   getSnapshot() {
     return {
-      baseAsset: this.baseAsset,
+      market: this.market,
       bids: this.bids,
       asks: this.asks,
       lastTradeId: this.lastTradeId,
@@ -37,39 +41,21 @@ export class Orderbook {
     };
   }
 
-  //TODO: Add self trade prevention
-  addOrder(order: Order): {
-    executedQty: number;
-    fills: Fill[];
-  } {
+  addOrder(order: Order): { executedQty: number; fills: Fill[] } {
     if (order.side === "buy") {
       const { executedQty, fills } = this.matchBid(order);
       order.filled = executedQty;
-      if (executedQty === order.quantity) {
-        return {
-          executedQty,
-          fills,
-        };
+      if (executedQty !== order.quantity) {
+        this.bids.push(order);
       }
-      this.bids.push(order);
-      return {
-        executedQty,
-        fills,
-      };
+      return { executedQty, fills };
     } else {
       const { executedQty, fills } = this.matchAsk(order);
       order.filled = executedQty;
-      if (executedQty === order.quantity) {
-        return {
-          executedQty,
-          fills,
-        };
+      if (executedQty !== order.quantity) {
+        this.asks.push(order);
       }
-      this.asks.push(order);
-      return {
-        executedQty,
-        fills,
-      };
+      return { executedQty, fills };
     }
   }
 
@@ -92,17 +78,8 @@ export class Orderbook {
         });
       }
     }
-    for (let i = 0; i < this.asks.length; i++) {
-      const ask = this.asks[i]!;
-      if (ask.filled === ask.quantity) {
-        this.asks.splice(i, 1);
-        i--;
-      }
-    }
-    return {
-      fills,
-      executedQty,
-    };
+    this.asks = this.asks.filter((a) => a.filled < a.quantity);
+    return { fills, executedQty };
   }
 
   matchAsk(order: Order): { fills: Fill[]; executedQty: number } {
@@ -127,61 +104,32 @@ export class Orderbook {
         });
       }
     }
-    for (let i = 0; i < this.bids.length; i++) {
-      const bid = this.bids[i]!;
-      if (bid.filled === bid.quantity) {
-        this.bids.splice(i, 1);
-        i--;
-      }
-    }
-    return {
-      fills,
-      executedQty,
-    };
+    this.bids = this.bids.filter((b) => b.filled < b.quantity);
+    return { fills, executedQty };
   }
 
-  //TODO: Can you make this faster? Can you compute this during order matches?
   getDepth() {
-    const bids: [string, string][] = [];
-    const asks: [string, string][] = [];
-
     const bidsObj: { [key: string]: number } = {};
     const asksObj: { [key: string]: number } = {};
 
-    for (let i = 0; i < this.bids.length; i++) {
-      const order = this.bids[i]!;
-      if (!bidsObj[order.price]) {
-        bidsObj[order.price] = 0;
-      }
-      bidsObj[order.price]! += order.quantity;
+    for (const order of this.bids) {
+      bidsObj[order.price] = (bidsObj[order.price] ?? 0) + order.quantity;
     }
-
-    for (let i = 0; i < this.asks.length; i++) {
-      const order = this.asks[i]!;
-      if (!asksObj[order.price]) {
-        asksObj[order.price] = 0;
-      }
-      asksObj[order.price]! += order.quantity;
-    }
-
-    for (const price in bidsObj) {
-      bids.push([price, bidsObj[price]!.toString()]);
-    }
-
-    for (const price in asksObj) {
-      asks.push([price, asksObj[price]!.toString()]);
+    for (const order of this.asks) {
+      asksObj[order.price] = (asksObj[order.price] ?? 0) + order.quantity;
     }
 
     return {
-      bids,
-      asks,
+      bids: Object.entries(bidsObj) as [string, string][],
+      asks: Object.entries(asksObj) as [string, string][],
     };
   }
 
   getOpenOrders(userId: string): Order[] {
-    const asks = this.asks.filter((x) => x.userId === userId);
-    const bids = this.bids.filter((x) => x.userId === userId);
-    return [...asks, ...bids];
+    return [
+      ...this.asks.filter((x) => x.userId === userId),
+      ...this.bids.filter((x) => x.userId === userId),
+    ];
   }
 
   cancelBid(order: Order) {

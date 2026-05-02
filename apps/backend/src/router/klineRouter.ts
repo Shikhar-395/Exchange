@@ -4,28 +4,36 @@ import { Router, Response, Request } from "express";
 export const klineRouter: Router = Router();
 
 klineRouter.get("/", async (req: Request, res: Response) => {
-  const { interval, startTime, endTime } = req.query;
+  const { symbol, interval, startTime, endTime } = req.query;
 
-  let query: string;
+  if (!symbol) {
+    return res.status(400).json({ message: "symbol is required" });
+  }
+
+  let table: string;
   switch (interval) {
     case "1m":
-      query = `SELECT * FROM klines_1m WHERE bucket >= $1 AND bucket <= $2`;
+      table = "klines_1m";
       break;
     case "1h":
-      query = `SELECT * FROM klines_1h WHERE bucket >= $1 AND bucket <= $2`;
+      table = "klines_1h";
       break;
     case "1w":
-      query = `SELECT * FROM klines_1w WHERE bucket >= $1 AND bucket <= $2`;
+      table = "klines_1w";
       break;
     default:
-      return res.status(400).json({ message: "invalid inputs" });
+      return res.status(400).json({ message: "invalid interval" });
   }
 
   try {
-    const result = await timeScaleClient.query(query, [
-      new Date(Number(startTime) * 1000),
-      new Date(Number(endTime) * 1000),
-    ]);
+    const result = await timeScaleClient.query(
+      `SELECT * FROM ${table} WHERE market = $1 AND bucket >= $2 AND bucket <= $3 ORDER BY bucket ASC`,
+      [
+        symbol,
+        new Date(Number(startTime) * 1000),
+        new Date(Number(endTime) * 1000),
+      ],
+    );
     res.json(
       result.rows.map((x: any) => ({
         close: x.close,
@@ -33,16 +41,14 @@ klineRouter.get("/", async (req: Request, res: Response) => {
         high: x.high,
         low: x.low,
         open: x.open,
-        quoteVolume: x.quoteVolume,
+        quoteVolume: x.quote_volume,
         start: x.start,
         trades: x.trades,
         volume: x.volume,
       })),
     );
   } catch (err) {
-    console.log(err);
-    res
-      .status(500)
-      .json({ message: "error occured while fetching kline data" });
+    console.error(err);
+    res.status(500).json({ message: "error fetching kline data" });
   }
 });

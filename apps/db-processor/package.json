@@ -5,7 +5,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "tsx ./src/index.ts"
+    "dev": "tsx ./src/index.ts",
+    "seed": "tsx ./src/seedTimescale.ts",
+    "cron": "tsx ./src/cron.ts"
   },
   "devDependencies": {
     "@repo/typescript-config": "workspace: *"

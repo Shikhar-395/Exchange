@@ -58,14 +58,14 @@ export class SubscriptionManager {
     }
   }
 
-  private redisCallbackHandler(message: string, channel: string) {
+  private redisCallbackHandler = (message: string, channel: string) => {
     const parsedMessage = JSON.parse(message);
     this.reverseSubscriptions
       .get(channel)
       ?.forEach((s) =>
         UserManager.getInstance().getUser(s)?.emit(parsedMessage),
       );
-  }
+  };
 
   public userLeft(userId: string) {
     console.log("user left " + userId);

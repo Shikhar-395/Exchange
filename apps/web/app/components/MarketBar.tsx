@@ -15,36 +15,26 @@ export const MarketBar = ({ market }: { market: string }) => {
       .then(setTicker)
       .catch(() => {});
     SignalingManager.getInstance().registerCallback(
-      "ticker",
-      (data: Partial<TickerType>) =>
-        setTicker((prev) => ({
-          firstPrice: data?.firstPrice ?? prev?.firstPrice ?? "",
-          high: data?.high ?? prev?.high ?? "",
-          lastPrice: data?.lastPrice ?? prev?.lastPrice ?? "",
-          low: data?.low ?? prev?.low ?? "",
-          priceChange: data?.priceChange ?? prev?.priceChange ?? "",
-          priceChangePercent:
-            data?.priceChangePercent ?? prev?.priceChangePercent ?? "",
-          quoteVolume: data?.quoteVolume ?? prev?.quoteVolume ?? "",
-          symbol: data?.symbol ?? prev?.symbol ?? "",
-          trades: data?.trades ?? prev?.trades ?? "",
-          volume: data?.volume ?? prev?.volume ?? "",
-        })),
-      `TICKER-${market}`,
+      "trade",
+      (data: { price: string }) =>
+        setTicker((prev) =>
+          prev ? { ...prev, lastPrice: data.price ?? prev.lastPrice } : prev,
+        ),
+      `TRADE-${market}`,
     );
     SignalingManager.getInstance().sendMessage({
       method: "SUBSCRIBE",
-      params: [`ticker.${market}`],
+      params: [`trade@${market}`],
     });
 
     return () => {
       SignalingManager.getInstance().deRegisterCallback(
-        "ticker",
-        `TICKER-${market}`,
+        "trade",
+        `TRADE-${market}`,
       );
       SignalingManager.getInstance().sendMessage({
         method: "UNSUBSCRIBE",
-        params: [`ticker.${market}`],
+        params: [`trade@${market}`],
       });
     };
   }, [market]);
