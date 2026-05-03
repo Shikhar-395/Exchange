@@ -1,123 +1,261 @@
-  name: CD
+name: CD
 
-  on:
-    push:
-      branches: [main]
+on:
+  push:
+    branches: [main]
 
-  env:
-    REGISTRY: ghcr.io  # GitHub Container Registry (free, private, no Docker Hub limits)
-    IMAGE_PREFIX: ghcr.io/nagmani001/exchange
+env:
+  REGISTRY: ghcr.io
+  IMAGE_PREFIX: ghcr.io/nagmani001/exchange
 
-  jobs:
-    # Step 1: Figure out what changed
-    changes:
-      runs-on: ubuntu-latest
-      outputs:
-        backend: ${{ steps.filter.outputs.backend }}
-        web: ${{ steps.filter.outputs.web }}
-      steps:
-        - uses: actions/checkout@v4
-        - uses: dorny/paths-filter@v3
-          id: filter
-          with:
-            filters: |
-              backend:
-                - 'apps/backend/**'
-                - 'packages/database/**'
-                - 'packages/common/**'
-                - 'packages/email/**'
-                - 'docker/backend/**'
-              web:
-                - 'apps/web/**'
-                - 'packages/ui/**'
-                - 'packages/common/**'
-                - 'docker/web/**'
+jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      backend: ${{ steps.filter.outputs.backend }}
+      engine: ${{ steps.filter.outputs.engine }}
+      db-processor: ${{ steps.filter.outputs.db-processor }}
+      websocket: ${{ steps.filter.outputs.websocket }}
+      market-maker: ${{ steps.filter.outputs.market-maker }}
+      web: ${{ steps.filter.outputs.web }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            backend:
+              - 'apps/backend/**'
+              - 'packages/database/**'
+              - 'packages/common/**'
+              - 'packages/email/**'
+              - 'docker/backend/**'
+            engine:
+              - 'apps/engine/**'
+              - 'packages/database/**'
+              - 'packages/common/**'
+              - 'docker/engine/**'
+            db-processor:
+              - 'apps/db-processor/**'
+              - 'packages/common/**'
+              - 'packages/database/**'
+              - 'docker/db-processor/**'
+            websocket:
+              - 'apps/websocket/**'
+              - 'packages/common/**'
+              - 'docker/websocket/**'
+            market-maker:
+              - 'apps/market-maker/**'
+              - 'docker/market-maker/**'
+            web:
+              - 'apps/web/**'
+              - 'packages/ui/**'
+              - 'packages/common/**'
+              - 'docker/web/**'
 
-    # Step 2: Build and push only what changed
-    build-backend:
-      needs: changes
-      if: needs.changes.outputs.backend == 'true'
-      runs-on: ubuntu-latest
-      permissions:
-       contents: read
-       packages: write
-      steps:
-        - uses: actions/checkout@v4
+  build-backend:
+    needs: changes
+    if: needs.changes.outputs.backend == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build and push backend
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/backend/Dockerfile
+          push: true
+          tags: |
+            ${{ env.IMAGE_PREFIX }}/backend:${{ github.sha }}
+            ${{ env.IMAGE_PREFIX }}/backend:latest
 
-        - name: Log in to GitHub Container Registry
-          uses: docker/login-action@v3
-          with:
-            registry: ghcr.io
-            username: ${{ github.actor }}
-            password: ${{ secrets.GITHUB_TOKEN }}  
+  build-engine:
+    needs: changes
+    if: needs.changes.outputs.engine == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build and push engine
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/engine/Dockerfile
+          push: true
+          tags: |
+            ${{ env.IMAGE_PREFIX }}/engine:${{ github.sha }}
+            ${{ env.IMAGE_PREFIX }}/engine:latest
 
-        - name: Build and push backend
-          uses: docker/build-push-action@v6
-          with:
-            context: .
-            file: docker/backend/Dockerfile
-            push: true
-            tags: |
-              ${{ env.IMAGE_PREFIX }}/backend:${{ github.sha }}
-              ${{ env.IMAGE_PREFIX }}/backend:latest
+  build-db-processor:
+    needs: changes
+    if: needs.changes.outputs.db-processor == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build and push db-processor
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/db-processor/Dockerfile
+          push: true
+          tags: |
+            ${{ env.IMAGE_PREFIX }}/db-processor:${{ github.sha }}
+            ${{ env.IMAGE_PREFIX }}/db-processor:latest
 
-    build-web:
-      needs: changes
-      if: needs.changes.outputs.web == 'true'
-      runs-on: ubuntu-latest
-      permissions:
-       contents: read
-       packages: write
-      steps:
-        - uses: actions/checkout@v4
+  build-websocket:
+    needs: changes
+    if: needs.changes.outputs.websocket == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build and push websocket
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/websocket/Dockerfile
+          push: true
+          tags: |
+            ${{ env.IMAGE_PREFIX }}/websocket:${{ github.sha }}
+            ${{ env.IMAGE_PREFIX }}/websocket:latest
 
-        - name: Log in to GitHub Container Registry
-          uses: docker/login-action@v3
-          with:
-            registry: ghcr.io
-            username: ${{ github.actor }}
-            password: ${{ secrets.GITHUB_TOKEN }}
+  build-market-maker:
+    needs: changes
+    if: needs.changes.outputs.market-maker == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build and push market-maker
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/market-maker/Dockerfile
+          push: true
+          tags: |
+            ${{ env.IMAGE_PREFIX }}/market-maker:${{ github.sha }}
+            ${{ env.IMAGE_PREFIX }}/market-maker:latest
 
-        - name: Build and push web
-          uses: docker/build-push-action@v6
-          with:
-            context: .
-            file: docker/web/Dockerfile
-            push: true
-            tags: |
-              ${{ env.IMAGE_PREFIX }}/web:${{ github.sha }}
-              ${{ env.IMAGE_PREFIX }}/web:latest
+  build-web:
+    needs: changes
+    if: needs.changes.outputs.web == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build and push web
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/web/Dockerfile
+          push: true
+          build-args: |
+            NEXT_PUBLIC_BACKEND_URL=${{ secrets.NEXT_PUBLIC_BACKEND_URL }}
+            NEXT_PUBLIC_EXCHANGE_API_URL=${{ secrets.NEXT_PUBLIC_EXCHANGE_API_URL }}
+            NEXT_PUBLIC_EXCHANGE_WS_URL=${{ secrets.NEXT_PUBLIC_EXCHANGE_WS_URL }}
+          tags: |
+            ${{ env.IMAGE_PREFIX }}/web:${{ github.sha }}
+            ${{ env.IMAGE_PREFIX }}/web:latest
 
-# Boilerplate CD 
-#      deploy:
-#       needs: [build-backend, build-web]
-#       # Run even if one build was skipped (nothing changed in that app)
-#       if: always() && (needs.build-backend.result == 'success' || needs.build-web.result == 'success' || needs.build-backend.result == 'skipped' || needs.build-web.result == 'skipped')
-#       runs-on: ubuntu-latest
-#       steps:
-#         - name: Deploy to EC2
-#           uses: appleboy/ssh-action@v1
-#           with:
-#             host: ${{ secrets.SSH_HOST }}
-#             username: ${{ secrets.SSH_USERNAME }}
-#             key: ${{ secrets.SSH_KEY }}
-#             script: |
-#               cd /home/${{ secrets.SSH_USERNAME }}/app
-#
-#               # Pull latest images
-#               docker compose pull
-#
-#               # Run database migrations
-#               docker compose run --rm backend npx prisma migrate deploy
-#
-#               # Restart services with zero downtime
-#               # --no-deps prevents restarting dependencies (database)
-#               docker compose up -d --no-deps --wait backend
-#               docker compose up -d --no-deps --wait web
-#
-#               # Verify health
-#               curl -f http://localhost:3001/health || exit 1
-#               curl -f http://localhost:3000 || exit 1
-#
-#               # Clean up old images
-#               docker image prune -f
+  deploy:
+    needs:
+      - build-backend
+      - build-engine
+      - build-db-processor
+      - build-websocket
+      - build-market-maker
+      - build-web
+    if: always() && !failure() && !cancelled()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Copy compose file to VM
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_KEY }}
+          passphrase: ${{ secrets.SSH_PASSPHRASE }}
+          source: docker/compose-files/docker-compose-deploy.yml
+          target: /root/exchange/
+          strip_components: 2
+
+      - name: Deploy to VM
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_KEY }}
+          passphrase: ${{ secrets.SSH_PASSPHRASE }}
+          script: |
+            cd /root/exchange
+
+            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+            docker compose -f docker-compose-deploy.yml pull
+
+            docker compose -f docker-compose-deploy.yml run --rm backend sh -c "cd packages/database && npx prisma@7.4.0 migrate deploy"
+
+            docker compose -f docker-compose-deploy.yml up -d --no-deps backend
+            docker compose -f docker-compose-deploy.yml up -d --no-deps engine
+            docker compose -f docker-compose-deploy.yml up -d --no-deps db-processor
+            docker compose -f docker-compose-deploy.yml up -d --no-deps websocket
+            docker compose -f docker-compose-deploy.yml up -d --no-deps market-maker
+            docker compose -f docker-compose-deploy.yml up -d --no-deps web
+
+            sleep 10
+            curl -f --retry 3 --retry-delay 2 http://localhost:3001/health || exit 1
+            curl -f --retry 3 --retry-delay 2 http://localhost:3000 || exit 1
+
+            docker image prune -f

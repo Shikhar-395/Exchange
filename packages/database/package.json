@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "seed": "tsx src/seed.ts"
+    "seed": "tsx --env-file=.env src/seed.ts"
   },
   "keywords": [],
   "author": "",
@@ -13,20 +13,19 @@
   "devDependencies": {
     "@types/node": "^22.15.3",
     "@types/pg": "^8.16.0",
+    "dotenv": "^17.3.1",
     "prisma": "^7.4.0",
     "@repo/typescript-config": "workspace:*",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3"
   },
   "exports":{
-    "./client":"./src/index.ts",
-    "./timescale":"./src/timescale.ts"
+    "./client":"./src/index.ts"
   },
   "type": "module",
   "dependencies": {
     "@prisma/adapter-pg": "^7.4.0",
     "@prisma/client": "^7.4.0",
-    "dotenv": "^17.3.1",
     "pg": "^8.18.0"
   }
 }

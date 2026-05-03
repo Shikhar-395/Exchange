@@ -91,10 +91,11 @@ export function TradeView({ market }: { market: string }) {
 
   useEffect(() => {
     const id = `tradeview-trade-${market}`;
-    const onTrade = (t: { price: string }) => {
+    const onTrade = (t: { price: string; quantity?: string }) => {
       const price = t.price ? parseFloat(t.price) : NaN;
+      const qty = t.quantity ? parseFloat(t.quantity) : 0;
       if (!isFinite(price)) return;
-      chartManagerRef.current?.updatePrice(price);
+      chartManagerRef.current?.updatePrice(price, isFinite(qty) ? qty : 0);
     };
     SignalingManager.getInstance().registerCallback("trade", onTrade, id);
     SignalingManager.getInstance().sendMessage({
@@ -111,6 +112,31 @@ export function TradeView({ market }: { market: string }) {
   }, [market]);
 
   useEffect(() => {
+    const refetch = async () => {
+      if (!chartManagerRef.current) return;
+      try {
+        const now = Date.now();
+        const data = await getKlines(
+          market,
+          interval,
+          Math.floor((now - cfg.rangeMs) / 1000),
+          Math.floor(now / 1000),
+        );
+        chartManagerRef.current?.mergeData(toCandles(data));
+      } catch (e) {}
+    };
+    const onVisible = () => {
+      if (document.visibilityState === "visible") refetch();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("focus", refetch);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("focus", refetch);
+    };
+  }, [market, interval, cfg]);
+
+  useEffect(() => {
     return () => {
       chartManagerRef.current?.destroy();
       chartManagerRef.current = null;
@@ -118,7 +144,7 @@ export function TradeView({ market }: { market: string }) {
   }, []);
 
   return (
-    <div className="flex flex-col w-full" style={{ marginTop: 4 }}>
+    <div className="flex w-full flex-col">
       <div className="flex items-center justify-between border-b border-[#1a2232] bg-[#0b0f17] px-2 py-1">
         <div className="flex gap-1">
           {ORDER.map((k) => (

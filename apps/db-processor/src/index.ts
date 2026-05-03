@@ -1,5 +1,5 @@
 import { DbMessage } from "@repo/common/dbMessages";
-import { timeScaleClient } from "@repo/database/timescale";
+import { timeScaleClient } from "./timescaleClient";
 import { createClient, RedisClientType } from "redis";
 import { startCron } from "./cron";
 
@@ -9,7 +9,9 @@ async function main() {
   await timeScaleClient.connect();
   console.log("connected to timescale");
 
-  const redisClient: RedisClientType = createClient();
+  const redisClient: RedisClientType = createClient({
+    url: process.env.REDIS_URL,
+  });
   await redisClient.connect();
   console.log("connected to redis");
 

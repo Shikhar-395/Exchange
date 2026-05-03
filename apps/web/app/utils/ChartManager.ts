@@ -160,7 +160,11 @@ export class ChartManager {
     this.chart.timeScale().fitContent();
   }
 
-  public updatePrice(price: number, now: number = Date.now()) {
+  public updatePrice(
+    price: number,
+    quantity: number = 0,
+    now: number = Date.now(),
+  ) {
     if (!isFinite(price) || price <= 0) return;
     const bucket = Math.floor(now / this.bucketMs) * this.bucketMs;
 
@@ -172,12 +176,13 @@ export class ChartManager {
         high: Math.max(open, price),
         low: Math.min(open, price),
         close: price,
-        volume: 0,
+        volume: quantity,
       };
     } else {
       this.lastCandle.close = price;
       if (price > this.lastCandle.high) this.lastCandle.high = price;
       if (price < this.lastCandle.low) this.lastCandle.low = price;
+      this.lastCandle.volume = (this.lastCandle.volume ?? 0) + quantity;
     }
 
     const t = (this.lastCandle.timestamp / 1000) as UTCTimestamp;
@@ -196,6 +201,11 @@ export class ChartManager {
           ? "rgba(31,199,161,0.40)"
           : "rgba(227,93,102,0.40)",
     });
+  }
+
+  public mergeData(data: Candle[]) {
+    if (!data.length) return;
+    this.setData(data);
   }
 
   public setBucketMs(bucketMs: number) {

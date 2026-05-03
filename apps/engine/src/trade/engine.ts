@@ -1,4 +1,9 @@
 import fs from "fs";
+import path from "path";
+
+const SNAPSHOT_DIR = process.env.SNAPSHOT_DIR ?? ".";
+const SNAPSHOT_PATH = path.join(SNAPSHOT_DIR, "snapshot.json");
+
 import {
   BASE_CURRENCY,
   CANCEL_ORDER,
@@ -36,7 +41,7 @@ export class Engine {
     let snapshot = null;
     try {
       if (process.env.WITH_SNAPSHOT) {
-        snapshot = fs.readFileSync("./snapshot.json");
+        snapshot = fs.readFileSync(SNAPSHOT_PATH);
       }
     } catch (e) {
       console.log("No snapshot found");
@@ -75,7 +80,8 @@ export class Engine {
       orderbooks: this.orderbooks.map((o) => o.getSnapshot()),
       balances: Array.from(this.balances.entries()),
     };
-    fs.writeFileSync("./snapshot.json", JSON.stringify(snapshot));
+    fs.mkdirSync(SNAPSHOT_DIR, { recursive: true });
+    fs.writeFileSync(SNAPSHOT_PATH, JSON.stringify(snapshot));
   }
 
   process({

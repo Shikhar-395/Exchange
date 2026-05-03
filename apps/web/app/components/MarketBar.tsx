@@ -38,10 +38,10 @@ export const MarketBar = ({ market }: { market: string }) => {
 
   return (
     <div className="border-b border-[#1a2232] bg-[#090d14]">
-      <div className="relative flex w-full items-center overflow-hidden">
-        <div className="flex items-center justify-between overflow-auto pr-4">
+      <div className="relative flex w-full items-center overflow-hidden px-4 md:px-6">
+        <div className="flex min-w-0 flex-1 items-center justify-between gap-4 overflow-x-auto">
           <TickerHeader market={market} />
-          <div className="flex items-center space-x-8 pl-4">
+          <div className="flex shrink-0 items-center gap-6 md:gap-8">
             <div className="flex flex-col h-full justify-center">
               <p className="text-md font-medium tabular-nums text-green-text">
                 ${ticker?.lastPrice}
@@ -97,8 +97,8 @@ function TickerHeader({ market }: { market: string }) {
   const baseIconUrl = `https://backpack.exchange/coins/${base.toLowerCase()}.png`;
 
   return (
-    <div className="flex h-[58px] shrink-0 items-center space-x-1.5">
-      <div className="relative ml-2">
+    <div className="flex h-[52px] shrink-0 items-center gap-1.5">
+      <div className="relative shrink-0">
         <img
           alt={`${base} logo`}
           loading="lazy"

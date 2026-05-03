@@ -10,6 +10,7 @@ export class SignalingManager {
   private static instance: SignalingManager;
   private bufferedMessages: any[] = [];
   private callbacks: Record<string, Callback[]> = {};
+  private subscriptions: Record<string, number> = {};
   private id: number;
   private initialized: boolean = false;
 
@@ -32,6 +33,27 @@ export class SignalingManager {
         this.ws.send(JSON.stringify(message));
       });
       this.bufferedMessages = [];
+      Object.keys(this.subscriptions).forEach((stream) => {
+        this.ws.send(
+          JSON.stringify({
+            method: "SUBSCRIBE",
+            params: [stream],
+            id: this.id++,
+          }),
+        );
+      });
+    };
+    this.ws.onclose = () => {
+      this.initialized = false;
+      setTimeout(() => {
+        this.ws = new WebSocket(BASE_URL);
+        this.init();
+      }, 1000);
+    };
+    this.ws.onerror = () => {
+      try {
+        this.ws.close();
+      } catch (e) {}
     };
     this.ws.onmessage = (event) => {
       const message = JSON.parse(event.data);
@@ -68,6 +90,18 @@ export class SignalingManager {
 
   sendMessage(message: any) {
     const messageToSend = { ...message, id: this.id++ };
+    if (message.method === "SUBSCRIBE" && Array.isArray(message.params)) {
+      for (const p of message.params) {
+        this.subscriptions[p] = (this.subscriptions[p] ?? 0) + 1;
+      }
+    }
+    if (message.method === "UNSUBSCRIBE" && Array.isArray(message.params)) {
+      for (const p of message.params) {
+        const c = (this.subscriptions[p] ?? 0) - 1;
+        if (c <= 0) delete this.subscriptions[p];
+        else this.subscriptions[p] = c;
+      }
+    }
     if (!this.initialized) {
       this.bufferedMessages.push(messageToSend);
       return;

@@ -14,7 +14,7 @@ export function Navbar() {
         "border-[#1a2232] bg-[#090d14] text-[#dce4ef]",
       )}
     >
-      <div className="mx-auto flex h-14 w-full max-w-screen-2xl items-center justify-between px-4 md:px-8">
+      <div className="flex h-14 w-full items-center justify-between px-4 md:px-6">
         <div className="flex items-center gap-6">
           <Link href="/" className="flex items-center gap-2">
             <img

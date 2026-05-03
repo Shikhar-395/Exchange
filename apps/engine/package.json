@@ -3,13 +3,17 @@
   "version": "1.0.0",
   "type": "module",
   "description": "",
-  "main": "index.js",
+  "main": "dist/index.js",
   "scripts": {
-    "dev": "tsx ./src/index.ts"
+    "dev": "tsx --env-file=.env ./src/index.ts",
+    "build": "node build.mjs",
+    "start": "node --env-file=.env dist/index.js"
   },
   "devDependencies": {
-    "@repo/typescript-config": "workspace: *",
-    "@repo/common": "workspace: *"
+    "@repo/typescript-config": "workspace:*",
+    "@repo/common": "workspace:*",
+    "esbuild": "^0.24.0",
+    "tsx": "^4.21.0"
   },
   "keywords": [],
   "author": "",

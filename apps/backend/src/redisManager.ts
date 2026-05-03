@@ -10,8 +10,12 @@ export class RedisManager {
   private static instance: RedisManager;
 
   private constructor() {
-    this.client = createClient();
-    this.publisher = createClient();
+    this.client = createClient({
+      url: process.env.REDIS_URL,
+    });
+    this.publisher = createClient({
+      url: process.env.REDIS_URL,
+    });
   }
 
   public static async connect() {

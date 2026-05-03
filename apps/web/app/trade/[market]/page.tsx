@@ -51,7 +51,7 @@ export default function Page() {
     <div className="exchange-shell flex min-h-[calc(100vh-56px)] w-full flex-row overflow-hidden bg-[#090d14] text-[#dce4ef]">
       <div className="flex min-h-0 min-w-0 flex-col flex-1 overflow-y-auto">
         <MarketBar market={m} />
-        <div className="flex h-[620px] flex-row border-y border-base-border-light">
+        <div className="flex h-[620px] flex-row border-y border-[#1a2232]">
           <div className="flex min-h-[620px] min-w-0 flex-col flex-1">
             <TradeView market={m} />
           </div>

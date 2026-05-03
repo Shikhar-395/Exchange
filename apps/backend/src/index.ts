@@ -1,9 +1,5 @@
 import express, { Request, Response } from "express";
 import { toNodeHandler } from "better-auth/node";
-import { dirname } from "path";
-import { fileURLToPath } from "url";
-import path from "path";
-import { config } from "dotenv";
 import cors from "cors";
 import { shutdown } from "./lib/utils";
 import { auth } from "./lib/auth";
@@ -12,7 +8,7 @@ import { authMiddleware } from "./middlewares/authMiddleware";
 import { initEmail } from "@repo/email/email";
 import { Server } from "http";
 import { prisma } from "@repo/database/client";
-import { connectTimescale } from "@repo/database/timescale";
+import { timeScaleClient } from "./timescaleClient";
 import { RedisManager } from "./redisManager";
 import { orderRouter } from "./router/orderRouter";
 import { depthRouter } from "./router/depthRouter";
@@ -23,11 +19,6 @@ import { openInterestRouter } from "./router/openInterestRouter";
 import { marketDataKlinesRouter } from "./router/marketDataKlinesRouter";
 
 const app = express();
-const __dirname = dirname(fileURLToPath(import.meta.url));
-
-config({
-  path: `${path.join(__dirname, "..")}/.env`,
-});
 
 declare global {
   namespace Express {
@@ -101,7 +92,8 @@ async function main() {
   try {
     await prisma.$queryRaw`SELECT 1`;
     await RedisManager.connect();
-    await connectTimescale();
+    await timeScaleClient.connect();
+    await timeScaleClient.query("SELECT 1");
     console.log("connected to auxiliary services");
   } catch (err) {
     console.log("failed to connect to auxiliary services:", err);

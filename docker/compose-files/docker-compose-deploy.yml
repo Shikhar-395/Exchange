@@ -1,0 +1,126 @@
+services:
+  database:
+    image: postgres
+    container_name: database
+    restart: always
+    environment:
+      - POSTGRES_PASSWORD=nagmani
+    ports:
+      - '5432:5432'
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 1s
+      timeout: 10s
+      retries: 10
+
+  redis:
+    image: redis
+    container_name: redis
+    restart: always
+    ports:
+      - '6379:6379'
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  timescaledb:
+    image: timescale/timescaledb:latest-pg12
+    container_name: timescaledb
+    restart: always
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_DB: exchange
+      POSTGRES_USER: exchange
+      POSTGRES_PASSWORD: nagmani
+    volumes:
+      - timescale-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U exchange -d exchange"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    image: ghcr.io/nagmani001/exchange/backend:latest
+    container_name: backend
+    restart: always
+    ports:
+      - "3001:3001"
+    env_file:
+      - .env.backend
+    depends_on:
+      database:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      timescaledb:
+        condition: service_healthy
+
+  engine:
+    image: ghcr.io/nagmani001/exchange/engine:latest
+    container_name: engine
+    restart: always
+    env_file:
+      - .env.engine
+    volumes:
+      - engine-data:/app/data
+    depends_on:
+      database:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  db-processor:
+    image: ghcr.io/nagmani001/exchange/db-processor:latest
+    container_name: db-processor
+    restart: always
+    env_file:
+      - .env.db-processor
+    depends_on:
+      redis:
+        condition: service_healthy
+      timescaledb:
+        condition: service_healthy
+
+  websocket:
+    image: ghcr.io/nagmani001/exchange/websocket:latest
+    container_name: websocket
+    restart: always
+    ports:
+      - "3002:3002"
+    env_file:
+      - .env.websocket
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  market-maker:
+    image: ghcr.io/nagmani001/exchange/market-maker:latest
+    container_name: market-maker
+    restart: always
+    env_file:
+      - .env.market-maker
+    depends_on:
+      - backend
+
+  web:
+    image: ghcr.io/nagmani001/exchange/web:latest
+    container_name: web
+    restart: always
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env.web
+
+volumes:
+  pgdata:
+  redis-data:
+  timescale-data:
+  engine-data:

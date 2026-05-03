@@ -4,7 +4,9 @@ import { Engine } from "./trade/engine";
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 async function main() {
-  const redisClient = createClient();
+  const redisClient = createClient({
+    url: process.env.REDIS_URL,
+  });
   await redisClient.connect();
 
   const engine = new Engine();

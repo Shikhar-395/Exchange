@@ -1,4 +1,4 @@
-import { timeScaleClient } from "@repo/database/timescale";
+import { timeScaleClient } from "../timescaleClient";
 import { Router, Response, Request } from "express";
 
 export const klineRouter: Router = Router();

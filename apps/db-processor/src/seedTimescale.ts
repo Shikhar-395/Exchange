@@ -1,5 +1,5 @@
 import { prisma } from "@repo/database/client";
-import { timeScaleClient } from "@repo/database/timescale";
+import { timeScaleClient } from "./timescaleClient";
 
 async function initializeDB() {
   await timeScaleClient.connect();
