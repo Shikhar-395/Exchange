@@ -233,7 +233,7 @@ function startMarketLoop(market: string) {
 }
 
 async function main() {
-  await new Promise((r) => setTimeout(r, 2000));
+  await new Promise((r) => setTimeout(r, 5000));
   await refreshRealPrices();
   setInterval(refreshRealPrices, REAL_PRICE_REFRESH_MS);
 

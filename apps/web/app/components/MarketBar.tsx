@@ -4,9 +4,6 @@ import { Ticker as TickerType } from "../utils/types";
 import { getTicker } from "../utils/httpClient";
 import { SignalingManager } from "../utils/SignalingManager";
 
-const BRAND_LOGO_URL =
-  "https://cdn.dribbble.com/userupload/45977907/file/6c9ac88b0b8e86d0cabf474a21f187e6.jpg?resize=1600x1200&vertical=center";
-
 export const MarketBar = ({ market }: { market: string }) => {
   const [ticker, setTicker] = useState<TickerType | null>(null);
 
@@ -40,23 +37,21 @@ export const MarketBar = ({ market }: { market: string }) => {
   }, [market]);
 
   return (
-    <div>
-      <div className="flex items-center flex-row relative w-full overflow-hidden border-b border-base-border-light">
-        <div className="flex items-center justify-between flex-row overflow-auto pr-4">
+    <div className="border-b border-[#1a2232] bg-[#090d14]">
+      <div className="relative flex w-full items-center overflow-hidden">
+        <div className="flex items-center justify-between overflow-auto pr-4">
           <TickerHeader market={market} />
-          <div className="flex items-center flex-row space-x-8 pl-4">
+          <div className="flex items-center space-x-8 pl-4">
             <div className="flex flex-col h-full justify-center">
-              <p className="font-medium tabular-nums text-md text-green-text">
+              <p className="text-md font-medium tabular-nums text-green-text">
                 ${ticker?.lastPrice}
               </p>
-              <p className="font-medium text-sm tabular-nums">
+              <p className="text-sm font-medium tabular-nums text-[#dce4ef]">
                 ${ticker?.lastPrice}
               </p>
             </div>
             <div className="flex flex-col">
-              <p className="font-medium text-xs text-base-text-med-emphasis">
-                24H Change
-              </p>
+              <p className="text-xs font-medium text-[#7f90a9]">24H Change</p>
               <p
                 className={`text-sm font-medium tabular-nums leading-5 ${
                   Number(ticker?.priceChange) > 0
@@ -70,26 +65,20 @@ export const MarketBar = ({ market }: { market: string }) => {
               </p>
             </div>
             <div className="flex flex-col">
-              <p className="font-medium text-xs text-base-text-med-emphasis">
-                24H High
-              </p>
-              <p className="text-sm font-medium tabular-nums leading-5">
+              <p className="text-xs font-medium text-[#7f90a9]">24H High</p>
+              <p className="text-sm font-medium tabular-nums leading-5 text-[#dce4ef]">
                 {ticker?.high}
               </p>
             </div>
             <div className="flex flex-col">
-              <p className="font-medium text-xs text-base-text-med-emphasis">
-                24H Low
-              </p>
-              <p className="text-sm font-medium tabular-nums leading-5">
+              <p className="text-xs font-medium text-[#7f90a9]">24H Low</p>
+              <p className="text-sm font-medium tabular-nums leading-5 text-[#dce4ef]">
                 {ticker?.low}
               </p>
             </div>
             <div className="flex flex-col">
-              <p className="font-medium text-xs text-base-text-med-emphasis">
-                24H Volume
-              </p>
-              <p className="mt-1 text-sm font-medium tabular-nums leading-5">
+              <p className="text-xs font-medium text-[#7f90a9]">24H Volume</p>
+              <p className="mt-1 text-sm font-medium tabular-nums leading-5 text-[#dce4ef]">
                 {ticker?.volume}
               </p>
             </div>
@@ -101,26 +90,45 @@ export const MarketBar = ({ market }: { market: string }) => {
 };
 
 function TickerHeader({ market }: { market: string }) {
+  const [baseRaw, quoteRaw = "USDC"] = market.split(/[_/]/);
+  const base = (baseRaw || "").replace(/-?PERP$/i, "");
+  const quote = (quoteRaw || "USDC").replace(/-?PERP$/i, "");
+  const isPerp = /PERP/i.test(market);
+  const baseIconUrl = `https://backpack.exchange/coins/${base.toLowerCase()}.png`;
+
   return (
-    <div className="flex h-[60px] shrink-0 space-x-4">
-      <div className="flex flex-row relative ml-2 -mr-4">
+    <div className="flex h-[58px] shrink-0 items-center space-x-1.5">
+      <div className="relative ml-2">
         <img
-          alt={`${market} Logo`}
+          alt={`${base} logo`}
           loading="lazy"
-          className="z-10 rounded-full h-6 w-6 mt-4"
-          src={BRAND_LOGO_URL}
+          className="h-6 w-6 rounded-full"
+          src={baseIconUrl}
+          onError={(e) => {
+            const target = e.currentTarget;
+            target.style.display = "none";
+            const fallback = target.nextElementSibling as HTMLDivElement | null;
+            if (fallback) fallback.style.display = "grid";
+          }}
         />
-        <img
-          alt="Quote Logo"
-          loading="lazy"
-          className="h-6 w-6 -ml-2 mt-4 rounded-full"
-          src={BRAND_LOGO_URL}
-        />
+        <div
+          style={{ display: "none" }}
+          className="h-6 w-6 place-items-center rounded-full bg-[#1a2232] text-[9px] font-bold text-[#dce4ef]"
+        >
+          {base.slice(0, 2).toUpperCase()}
+        </div>
       </div>
       <button type="button">
-        <div className="flex items-center justify-between flex-row cursor-pointer rounded-lg p-3 hover:opacity-80">
+        <div className="flex cursor-pointer flex-row items-center justify-between rounded-lg px-2 py-1 hover:opacity-90">
           <div className="flex items-center flex-row gap-2">
-            <p className="font-medium text-sm">{market.replace("_", " / ")}</p>
+            <p className="text-sm font-medium text-[#dce4ef]">
+              {base.toUpperCase()} / {quote.toUpperCase()}
+            </p>
+            {isPerp && (
+              <span className="rounded bg-[#182334] px-1.5 py-0.5 text-[10px] font-semibold text-[#8ea0ba]">
+                PERP
+              </span>
+            )}
           </div>
         </div>
       </button>

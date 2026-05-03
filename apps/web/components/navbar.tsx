@@ -10,8 +10,8 @@ export function Navbar() {
   return (
     <header
       className={cn(
-        "sticky top-0 z-50 w-full border-b backdrop-blur",
-        "border-[var(--auth-border)] bg-[var(--auth-base)]/95 text-[var(--auth-text)]",
+        "sticky top-0 z-50 w-full border-b",
+        "border-[#1a2232] bg-[#090d14] text-[#dce4ef]",
       )}
     >
       <div className="mx-auto flex h-14 w-full max-w-screen-2xl items-center justify-between px-4 md:px-8">
@@ -27,13 +27,13 @@ export function Navbar() {
           </Link>
           <Link
             href="/markets"
-            className="text-sm text-[var(--auth-text-muted)] hover:text-[var(--auth-text)]"
+            className="text-sm text-[#7f90a9] hover:text-[#dce4ef]"
           >
             Markets
           </Link>
           <Link
             href="/trade/SOL_USDC"
-            className="text-sm text-[var(--auth-text-muted)] hover:text-[var(--auth-text)]"
+            className="text-sm text-[#7f90a9] hover:text-[#dce4ef]"
           >
             Trade
           </Link>

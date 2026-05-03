@@ -23,6 +23,7 @@ export interface ChartTheme {
   upColor?: string;
   downColor?: string;
   gridColor?: string;
+  crosshairColor?: string;
 }
 
 export class ChartManager {
@@ -46,10 +47,11 @@ export class ChartManager {
       color: theme.color,
       upColor: theme.upColor ?? "#26a69a",
       downColor: theme.downColor ?? "#ef5350",
+      crosshairColor: theme.crosshairColor ?? "rgba(122, 138, 162, 0.55)",
       gridColor:
         theme.gridColor ??
-        (theme.background.toLowerCase() === "#0e0f14"
-          ? "rgba(255,255,255,0.06)"
+        (theme.background.toLowerCase() === "#0b0f17"
+          ? "rgba(124, 141, 168, 0.14)"
           : "rgba(0,0,0,0.06)"),
     };
 
@@ -59,31 +61,33 @@ export class ChartManager {
         mode: CrosshairMode.Normal,
         vertLine: {
           width: 1,
-          color: this.theme.color,
+          color: this.theme.crosshairColor,
           style: LineStyle.Dashed,
-          labelBackgroundColor: this.theme.color,
+          labelBackgroundColor: "#121c2c",
         },
         horzLine: {
           width: 1,
-          color: this.theme.color,
+          color: this.theme.crosshairColor,
           style: LineStyle.Dashed,
-          labelBackgroundColor: this.theme.color,
+          labelBackgroundColor: "#121c2c",
         },
       },
       rightPriceScale: {
         visible: true,
         ticksVisible: true,
         entireTextOnly: true,
-        borderColor: this.theme.gridColor,
-        scaleMargins: { top: 0.08, bottom: 0.25 },
+        borderVisible: false,
+        scaleMargins: { top: 0.06, bottom: 0.2 },
       },
       timeScale: {
         visible: true,
         timeVisible: true,
         secondsVisible: bucketMs < 60_000,
-        borderColor: this.theme.gridColor,
+        borderVisible: false,
         rightOffset: 6,
-        barSpacing: 8,
+        barSpacing: 7,
+        minBarSpacing: 3,
+        fixLeftEdge: true,
       },
       grid: {
         horzLines: { color: this.theme.gridColor },
@@ -95,6 +99,13 @@ export class ChartManager {
         fontFamily: "Inter, system-ui, sans-serif",
       },
       watermark: { visible: false, text: "" },
+      localization: {
+        priceFormatter: (value: number) =>
+          value.toLocaleString("en-US", {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+          }),
+      },
     });
 
     this.chart = chart;
@@ -109,6 +120,7 @@ export class ChartManager {
       priceLineVisible: true,
       priceLineWidth: 1,
       priceLineStyle: LineStyle.Dotted,
+      priceLineColor: "#1fc7a1",
       lastValueVisible: true,
     });
 
@@ -118,7 +130,7 @@ export class ChartManager {
       color: this.theme.upColor,
     });
     chart.priceScale("volume").applyOptions({
-      scaleMargins: { top: 0.8, bottom: 0 },
+      scaleMargins: { top: 0.83, bottom: 0.01 },
       borderVisible: false,
     });
 
@@ -141,7 +153,7 @@ export class ChartManager {
         time: (d.timestamp / 1000) as UTCTimestamp,
         value: d.volume ?? 0,
         color:
-          d.close >= d.open ? "rgba(38,166,154,0.55)" : "rgba(239,83,80,0.55)",
+          d.close >= d.open ? "rgba(31,199,161,0.40)" : "rgba(227,93,102,0.40)",
       })),
     );
     this.lastCandle = sorted.length ? { ...sorted[sorted.length - 1]! } : null;
@@ -181,8 +193,8 @@ export class ChartManager {
       value: this.lastCandle.volume ?? 0,
       color:
         this.lastCandle.close >= this.lastCandle.open
-          ? "rgba(38,166,154,0.55)"
-          : "rgba(239,83,80,0.55)",
+          ? "rgba(31,199,161,0.40)"
+          : "rgba(227,93,102,0.40)",
     });
   }
 
