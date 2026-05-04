@@ -82,7 +82,7 @@ export function Depth({ market }: { market: string }) {
       .catch(() => {});
 
     getTicker(market)
-      .then((t) => setPrice(t.lastPrice))
+      .then((t) => setPrice(t.lastPrice ?? undefined))
       .catch(() => {});
     getTrades(market)
       .then((t) => {

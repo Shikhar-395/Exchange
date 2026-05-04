@@ -18,9 +18,11 @@ function formatUsd(value: string | null): string {
 }
 
 function Sparkline({ points }: { points: number[] }) {
-  if (points.length < 2)
+  const first = points[0];
+  const last = points[points.length - 1];
+  if (first === undefined || last === undefined || points.length < 2)
     return <span className="text-sm text-[var(--auth-text-muted)]">—</span>;
-  const weekUp = points[points.length - 1] >= points[0];
+  const weekUp = last >= first;
   const min = Math.min(...points);
   const max = Math.max(...points);
   const range = max - min || 1;
