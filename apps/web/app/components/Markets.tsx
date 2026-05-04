@@ -49,41 +49,41 @@ function Sparkline({ points }: { points: number[] }) {
 type Category = "SPOT" | "FUTURES";
 const PINNED_TOKEN_ORDER = [
   "BTC",
-  "SOL",
   "ETH",
-  "PAXG",
-  "HYPE",
-  "BNB",
-  "SUI",
-  "LIT",
-  "JUP",
+  "SOL",
   "XRP",
-  "PUMP",
-  "TAO",
+  "BNB",
   "DOGE",
-  "MON",
-  "PENGU",
+  "ADA",
+  "AVAX",
+  "LINK",
+  "SUI",
+  "TON",
+  "DOT",
+  "LTC",
+  "NEAR",
+  "PEPE",
 ] as const;
 
 const topSections = [
   {
     title: "New",
     rows: [
-      { symbol: "MEGA-PERP", price: "$0.15105", change: -17.13 },
-      { symbol: "EDGE-PERP", price: "$1.23", change: 1.75 },
-      { symbol: "BP/USD", price: "$0.14804", change: 3.67 },
-      { symbol: "ZEC/USD", price: "$350.87", change: 49.91 },
-      { symbol: "PAXG/USD", price: "$4,561.90", change: -1.39 },
+      { symbol: "PEPE-PERP", price: "$0.00001234", change: 4.21 },
+      { symbol: "NEAR-PERP", price: "$5.12", change: 2.18 },
+      { symbol: "TON-PERP", price: "$5.78", change: -1.04 },
+      { symbol: "SUI-PERP", price: "$3.45", change: 3.67 },
+      { symbol: "LINK-PERP", price: "$23.40", change: 1.1 },
     ],
   },
   {
     title: "Top Movers",
     rows: [
-      { symbol: "MEGA-PERP", price: "$0.15105", change: -17.13 },
-      { symbol: "PENDLE-PERP", price: "$1.51", change: 16.51 },
-      { symbol: "MON-PERP", price: "$0.029163", change: 8.46 },
-      { symbol: "WLFI-PERP", price: "$0.05675", change: -6.64 },
-      { symbol: "SKR-PERP", price: "$0.016705", change: 5.73 },
+      { symbol: "DOGE-PERP", price: "$0.18", change: 8.46 },
+      { symbol: "AVAX-PERP", price: "$36.20", change: 6.51 },
+      { symbol: "ADA-PERP", price: "$0.62", change: -3.64 },
+      { symbol: "DOT-PERP", price: "$7.85", change: 5.73 },
+      { symbol: "LTC-PERP", price: "$92.10", change: -2.13 },
     ],
   },
   {
@@ -92,8 +92,8 @@ const topSections = [
       { symbol: "BTC-PERP", price: "$77,264.60", change: 1.53 },
       { symbol: "ETH-PERP", price: "$2,281.99", change: 0.71 },
       { symbol: "SOL-PERP", price: "$83.90", change: 0.82 },
-      { symbol: "MEGA-PERP", price: "$0.15105", change: -17.13 },
-      { symbol: "HYPE-PERP", price: "$40.53", change: 3.58 },
+      { symbol: "XRP-PERP", price: "$2.34", change: 1.2 },
+      { symbol: "BNB-PERP", price: "$612.40", change: 0.45 },
     ],
   },
 ];
@@ -155,7 +155,7 @@ export const Markets = () => {
     : undefined;
 
   return (
-    <div className="flex flex-col flex-1 max-w-[1500px] w-full gap-4">
+    <div className="flex flex-col flex-1 max-w-[1280px] w-full mx-auto gap-4">
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-1 rounded-xl border border-[var(--auth-border)] bg-[var(--auth-surface)] p-1">
           {(["SPOT", "FUTURES"] as Category[]).map((c) => (
@@ -302,7 +302,7 @@ export const Markets = () => {
             {Array.from({ length: 8 }).map((_, i) => (
               <div
                 key={i}
-                className="h-[60px] border-b border-[var(--auth-border)] animate-pulse bg-[var(--auth-surface-strong)]"
+                className="h-[80px] border-b border-[var(--auth-border)] animate-pulse bg-[var(--auth-surface-strong)]"
               />
             ))}
           </div>
@@ -348,12 +348,12 @@ function MarketRow({
       className="cursor-pointer border-b border-[var(--auth-border)] last:border-0 hover:bg-[var(--auth-surface-strong)] transition-colors"
       onClick={() => router.push(`/trade/${market.symbol}`)}
     >
-      <td className="px-4 py-3">
+      <td className="px-4 py-6">
         <div className="flex items-center gap-3">
           <img
             src={tokenIconUrl}
             alt={`${market.baseCurrency} logo`}
-            className="size-7 rounded-full object-cover shrink-0"
+            className="size-9 rounded-full object-cover shrink-0"
             loading="lazy"
             onError={(e) => {
               const target = e.currentTarget;
@@ -365,7 +365,7 @@ function MarketRow({
           />
           <div
             style={{ display: "none" }}
-            className="size-7 place-items-center rounded-full bg-[var(--auth-surface-strong)] text-[10px] font-bold text-[var(--auth-text)] shrink-0"
+            className="size-9 place-items-center rounded-full bg-[var(--auth-surface-strong)] text-[10px] font-bold text-[var(--auth-text)] shrink-0"
           >
             {market.baseCurrency.slice(0, 2)}
           </div>
@@ -374,24 +374,24 @@ function MarketRow({
           </span>
         </div>
       </td>
-      <td className="px-4 py-3">
+      <td className="px-4 py-6">
         <span className="text-sm font-medium tabular-nums text-[var(--auth-text)]">
           {market.lastPrice
             ? `$${Number(market.lastPrice).toLocaleString()}`
             : "—"}
         </span>
       </td>
-      <td className="px-4 py-3">
+      <td className="px-4 py-6">
         <span className="text-sm tabular-nums text-[var(--auth-text-muted)]">
           {formatUsd(market.quoteVolume)}
         </span>
       </td>
-      <td className="px-4 py-3">
+      <td className="px-4 py-6">
         <span className="text-sm tabular-nums text-[var(--auth-text-muted)]">
           {thirdColValue}
         </span>
       </td>
-      <td className="px-4 py-3">
+      <td className="px-4 py-6">
         {change !== null ? (
           <span
             className={`text-sm font-medium tabular-nums ${
@@ -405,7 +405,7 @@ function MarketRow({
           <span className="text-sm text-[var(--auth-text-muted)]">—</span>
         )}
       </td>
-      <td className="px-4 py-3">
+      <td className="px-4 py-6">
         <Sparkline points={klinePoints ?? []} />
       </td>
     </tr>

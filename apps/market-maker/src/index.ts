@@ -36,17 +36,30 @@ const targetSnapshots = new Map<
   { from: number; to: number; startedAt: number }
 >();
 
+const DEFAULT_PRICE = 100;
+
 async function fetchTickers(): Promise<Ticker[]> {
   const { data } = await axios.get<Ticker[]>(`${BASE_URL}/api/v1/tickers`);
-  return data.filter((t) => t.lastPrice !== null && Number(t.lastPrice) > 0);
+  return data;
+}
+
+function counterpart(sym: string) {
+  return sym.endsWith("_PERP") ? sym.slice(0, -"_PERP".length) : `${sym}_PERP`;
 }
 
 async function refreshRealPrices() {
   try {
     const tickers = await fetchTickers();
+    const priceMap = new Map<string, number>();
+    for (const t of tickers) {
+      const v = Number(t.lastPrice);
+      if (Number.isFinite(v) && v > 0) priceMap.set(t.symbol, v);
+    }
     const now = Date.now();
     for (const t of tickers) {
-      const real = Number(t.lastPrice);
+      const direct = priceMap.get(t.symbol);
+      const fallback = priceMap.get(counterpart(t.symbol));
+      const real = direct ?? fallback ?? DEFAULT_PRICE;
       const prev = realPrices.get(t.symbol);
       realPrices.set(t.symbol, real);
       if (prev === undefined) {
