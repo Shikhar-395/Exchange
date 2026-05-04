@@ -16,11 +16,16 @@ RUN turbo prune web --docker
 FROM base AS builder
 WORKDIR /app
 
+ARG NEXT_PUBLIC_EXCHANGE_API_URL
+ARG NEXT_PUBLIC_EXCHANGE_WS_URL
+ENV NEXT_PUBLIC_EXCHANGE_API_URL=$NEXT_PUBLIC_EXCHANGE_API_URL
+ENV NEXT_PUBLIC_EXCHANGE_WS_URL=$NEXT_PUBLIC_EXCHANGE_WS_URL
+
 COPY --from=prepare /app/out/json/ .
 RUN pnpm install --frozen-lockfile
 
 COPY --from=prepare /app/out/full/ .
-RUN pnpm build 
+RUN pnpm build
 
 FROM base AS runner
 WORKDIR /app

@@ -193,19 +193,12 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Build and push web
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: docker/web/Dockerfile
-          push: true
-          build-args: |
-            NEXT_PUBLIC_BACKEND_URL=${{ secrets.NEXT_PUBLIC_BACKEND_URL }}
-            NEXT_PUBLIC_EXCHANGE_API_URL=${{ secrets.NEXT_PUBLIC_EXCHANGE_API_URL }}
-            NEXT_PUBLIC_EXCHANGE_WS_URL=${{ secrets.NEXT_PUBLIC_EXCHANGE_WS_URL }}
-          tags: |
-            ${{ env.IMAGE_PREFIX }}/web:${{ github.sha }}
-            ${{ env.IMAGE_PREFIX }}/web:latest
+      - name: Build web via compose (uses inline build.args)
+        run: |
+          docker compose -f docker/compose-files/docker-compose-deploy.yml build web
+          docker tag ghcr.io/nagmani001/exchange/web:latest ghcr.io/nagmani001/exchange/web:${{ github.sha }}
+          docker push ghcr.io/nagmani001/exchange/web:latest
+          docker push ghcr.io/nagmani001/exchange/web:${{ github.sha }}
 
   deploy:
     needs:
@@ -228,7 +221,7 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           passphrase: ${{ secrets.SSH_PASSPHRASE }}
           source: docker/compose-files/docker-compose-deploy.yml
-          target: /root/exchange/
+          target: /home/${{ secrets.SSH_USERNAME }}/exchange/
           strip_components: 2
 
       - name: Deploy to VM
@@ -239,9 +232,9 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           passphrase: ${{ secrets.SSH_PASSPHRASE }}
           script: |
-            cd /root/exchange
+            cd /home/${{ secrets.SSH_USERNAME }}/exchange
 
-            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+            echo "${{ secrets.GHCR_PAT }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
             docker compose -f docker-compose-deploy.yml pull
 

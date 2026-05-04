@@ -118,6 +118,12 @@ services:
       - "3000:3000"
     env_file:
       - .env.web
+    build:
+      context: ../..
+      dockerfile: docker/web/Dockerfile
+      args:
+        NEXT_PUBLIC_EXCHANGE_API_URL: https://api.exchange.nagmani.site/api/v1
+        NEXT_PUBLIC_EXCHANGE_WS_URL: wss://ws.exchange.nagmani.site
 
 volumes:
   pgdata:
