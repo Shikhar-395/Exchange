@@ -1,3 +1,3 @@
 export function getBackendUrl() {
-  return "http://localhost:3001";
+  return process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:3001";
 }
