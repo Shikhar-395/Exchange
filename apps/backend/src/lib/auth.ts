@@ -10,15 +10,12 @@ export const auth = betterAuth({
   database: prismaAdapter(prisma, {
     provider: "postgresql",
   }),
-  /*
-INFO: uncomment this in production
   advanced: {
     crossSubDomainCookies: {
       enabled: true,
-      domain: ".nagmaniupadhyay.com.np"
-    }
+      domain: ".nagmani.site",
+    },
   },
-   */
   trustedOrigins: [
     process.env.FRONTEND_URL_DEPLOYED!,
     "http://localhost:3000",
