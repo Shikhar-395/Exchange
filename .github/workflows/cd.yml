@@ -200,7 +200,7 @@ jobs:
           docker push ghcr.io/nagmani001/exchange/web:latest
           docker push ghcr.io/nagmani001/exchange/web:${{ github.sha }}
 
-  deploy:
+  migrate:
     needs:
       - build-backend
       - build-engine
@@ -208,6 +208,49 @@ jobs:
       - build-websocket
       - build-market-maker
       - build-web
+    if: always() && !failure() && !cancelled()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Prisma generate + migrate deploy
+        working-directory: packages/database
+        env:
+          DATABASE_URL: postgresql://postgres:nagmani@13.53.71.160:5432/postgres
+        run: |
+          pnpm exec prisma generate
+          pnpm exec prisma migrate deploy
+
+      - name: Seed Postgres markets
+        working-directory: packages/database
+        env:
+          DATABASE_URL: postgresql://postgres:nagmani@13.53.71.160:5432/postgres
+        run: pnpm exec tsx src/seed.ts
+
+      - name: Init TimescaleDB schema
+        working-directory: apps/db-processor
+        env:
+          DATABASE_URL: postgresql://postgres:nagmani@13.53.71.160:5432/postgres
+          TIMESCALE_USER: exchange
+          TIMESCALE_HOST: 13.53.71.160
+          TIMESCALE_DATABASE: exchange
+          TIMESCALE_PASSWORD: nagmani
+          TIMESCALE_PORT: "5433"
+        run: pnpm exec tsx src/seedTimescale.ts
+
+  deploy:
+    needs: migrate
     if: always() && !failure() && !cancelled()
     runs-on: ubuntu-latest
     steps:
@@ -237,8 +280,6 @@ jobs:
             echo "${{ secrets.GHCR_PAT }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
             docker compose -f docker-compose-deploy.yml pull
-
-            docker compose -f docker-compose-deploy.yml run --rm backend sh -c "cd packages/database && npx prisma@7.4.0 migrate deploy"
 
             docker compose -f docker-compose-deploy.yml up -d --no-deps backend
             docker compose -f docker-compose-deploy.yml up -d --no-deps engine
