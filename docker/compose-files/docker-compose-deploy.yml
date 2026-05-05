@@ -94,7 +94,7 @@ services:
     container_name: websocket
     restart: always
     ports:
-      - "4002:4002"
+      - "4002:3002"
     env_file:
       - .env.websocket
     depends_on:
