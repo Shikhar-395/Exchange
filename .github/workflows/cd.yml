@@ -201,8 +201,40 @@ jobs:
           docker push ghcr.io/nagmani001/exchange/web:latest
           docker push ghcr.io/nagmani001/exchange/web:${{ github.sha }}
 
+  start-auxiliary:
+    needs: changes
+    if: always() && !failure() && !cancelled()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Copy auxiliary compose to VM
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_KEY }}
+          passphrase: ${{ secrets.SSH_PASSPHRASE }}
+          source: docker/compose-files/docker-compose-auxilary-services.yml
+          target: /home/${{ secrets.SSH_USERNAME }}/exchange/
+          strip_components: 2
+
+      - name: Start auxiliary services and wait for health
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_KEY }}
+          passphrase: ${{ secrets.SSH_PASSPHRASE }}
+          script: |
+            cd /home/${{ secrets.SSH_USERNAME }}/exchange
+            docker compose -f docker-compose-auxilary-services.yml up -d
+            until docker exec database pg_isready -U postgres; do sleep 2; done
+            until docker exec timescaledb pg_isready -U exchange; do sleep 2; done
+
   migrate:
     needs:
+      - start-auxiliary
       - build-backend
       - build-engine
       - build-db-processor
