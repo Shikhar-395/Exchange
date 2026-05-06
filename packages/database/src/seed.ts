@@ -111,24 +111,17 @@ const TOP_BASES = [
   "TON",
 ];
 
-const RAW_SYMBOLS = TOP_BASES.flatMap((base) => [
-  `${base}_USDC`,
-  `${base}_USDC_PERP`,
-]);
+const RAW_SYMBOLS = TOP_BASES.map((base) => `${base}_USDC`);
 
 function parseSymbol(symbol: string): {
   baseCurrency: string;
   quoteCurrency: string;
   category: "SPOT" | "FUTURES";
 } {
-  const isPerp = symbol.endsWith("_PERP");
-  const base = isPerp
-    ? symbol.slice(0, -"_USDC_PERP".length)
-    : symbol.slice(0, -"_USDC".length);
   return {
-    baseCurrency: base,
+    baseCurrency: symbol.slice(0, -"_USDC".length),
     quoteCurrency: "USDC",
-    category: isPerp ? "FUTURES" : "SPOT",
+    category: "SPOT",
   };
 }
 

@@ -91,9 +91,8 @@ export const MarketBar = ({ market }: { market: string }) => {
 
 function TickerHeader({ market }: { market: string }) {
   const [baseRaw, quoteRaw = "USDC"] = market.split(/[_/]/);
-  const base = (baseRaw || "").replace(/-?PERP$/i, "");
-  const quote = (quoteRaw || "USDC").replace(/-?PERP$/i, "");
-  const isPerp = /PERP/i.test(market);
+  const base = baseRaw || "";
+  const quote = quoteRaw || "USDC";
   const baseIconUrl = `https://backpack.exchange/coins/${base.toLowerCase()}.png`;
 
   return (
@@ -124,11 +123,6 @@ function TickerHeader({ market }: { market: string }) {
             <p className="text-sm font-medium text-[#dce4ef]">
               {base.toUpperCase()} / {quote.toUpperCase()}
             </p>
-            {isPerp && (
-              <span className="rounded bg-[#182334] px-1.5 py-0.5 text-[10px] font-semibold text-[#8ea0ba]">
-                PERP
-              </span>
-            )}
           </div>
         </div>
       </button>

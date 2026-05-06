@@ -3,11 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Ticker } from "../utils/types";
-import {
-  getMarketDataKlines,
-  getOpenInterest,
-  getTickers,
-} from "../utils/httpClient";
+import { getMarketDataKlines, getTickers } from "../utils/httpClient";
 
 function formatUsd(value: string | null): string {
   if (!value) return "—";
@@ -48,7 +44,6 @@ function Sparkline({ points }: { points: number[] }) {
   );
 }
 
-type Category = "SPOT" | "FUTURES";
 const PINNED_TOKEN_ORDER = [
   "BTC",
   "ETH",
@@ -66,51 +61,43 @@ const topSections = [
   {
     title: "New",
     rows: [
-      { symbol: "TON-PERP", price: "$5.78", change: -1.04 },
-      { symbol: "LINK-PERP", price: "$23.40", change: 1.1 },
-      { symbol: "AVAX-PERP", price: "$36.20", change: 6.51 },
-      { symbol: "ADA-PERP", price: "$0.62", change: -3.64 },
-      { symbol: "DOGE-PERP", price: "$0.18", change: 8.46 },
+      { symbol: "TON_USDC", price: "$5.78", change: -1.04 },
+      { symbol: "LINK_USDC", price: "$23.40", change: 1.1 },
+      { symbol: "AVAX_USDC", price: "$36.20", change: 6.51 },
+      { symbol: "ADA_USDC", price: "$0.62", change: -3.64 },
+      { symbol: "DOGE_USDC", price: "$0.18", change: 8.46 },
     ],
   },
   {
     title: "Top Movers",
     rows: [
-      { symbol: "DOGE-PERP", price: "$0.18", change: 8.46 },
-      { symbol: "AVAX-PERP", price: "$36.20", change: 6.51 },
-      { symbol: "ADA-PERP", price: "$0.62", change: -3.64 },
-      { symbol: "LINK-PERP", price: "$23.40", change: 1.1 },
-      { symbol: "TON-PERP", price: "$5.78", change: -1.04 },
+      { symbol: "DOGE_USDC", price: "$0.18", change: 8.46 },
+      { symbol: "AVAX_USDC", price: "$36.20", change: 6.51 },
+      { symbol: "ADA_USDC", price: "$0.62", change: -3.64 },
+      { symbol: "LINK_USDC", price: "$23.40", change: 1.1 },
+      { symbol: "TON_USDC", price: "$5.78", change: -1.04 },
     ],
   },
   {
     title: "Popular",
     rows: [
-      { symbol: "BTC-PERP", price: "$77,264.60", change: 1.53 },
-      { symbol: "ETH-PERP", price: "$2,281.99", change: 0.71 },
-      { symbol: "SOL-PERP", price: "$83.90", change: 0.82 },
-      { symbol: "XRP-PERP", price: "$2.34", change: 1.2 },
-      { symbol: "BNB-PERP", price: "$612.40", change: 0.45 },
+      { symbol: "BTC_USDC", price: "$77,264.60", change: 1.53 },
+      { symbol: "ETH_USDC", price: "$2,281.99", change: 0.71 },
+      { symbol: "SOL_USDC", price: "$83.90", change: 0.82 },
+      { symbol: "XRP_USDC", price: "$2.34", change: 1.2 },
+      { symbol: "BNB_USDC", price: "$612.40", change: 0.45 },
     ],
   },
 ];
 
 export const Markets = () => {
   const [tickers, setTickers] = useState<Ticker[]>();
-  const [category, setCategory] = useState<Category>("FUTURES");
-  const [oiMap, setOiMap] = useState<Map<string, string>>(new Map());
   const [klineMap, setKlineMap] = useState<Map<string, number[]>>(new Map());
 
   useEffect(() => {
     getTickers()
       .then(setTickers)
       .catch(() => setTickers([]));
-
-    getOpenInterest()
-      .then((data) =>
-        setOiMap(new Map(data.map((d) => [d.symbol, d.openInterest]))),
-      )
-      .catch(() => {});
 
     getMarketDataKlines()
       .then((arr) => {
@@ -122,12 +109,8 @@ export const Markets = () => {
       .catch(() => {});
   }, []);
 
-  const filtered = tickers?.filter((t) => {
-    const matchCat = t.category === category;
-    return matchCat;
-  });
-  const ordered = filtered
-    ? [...filtered].sort((a, b) => {
+  const ordered = tickers
+    ? [...tickers].sort((a, b) => {
         const tokenA = (
           a.baseCurrency ||
           a.symbol.split(/[_-]/)[0] ||
@@ -153,24 +136,6 @@ export const Markets = () => {
 
   return (
     <div className="flex flex-col flex-1 max-w-[1280px] w-full mx-auto gap-4">
-      <div className="flex items-center justify-between gap-4">
-        <div className="flex items-center gap-1 rounded-xl border border-[var(--auth-border)] bg-[var(--auth-surface)] p-1">
-          {(["SPOT", "FUTURES"] as Category[]).map((c) => (
-            <button
-              key={c}
-              onClick={() => setCategory(c)}
-              className={`rounded-lg px-4 py-1.5 text-sm font-medium transition-colors ${
-                category === c
-                  ? "bg-[var(--auth-color-primary)] text-[var(--app-color-foreground)]"
-                  : "text-[var(--auth-text-muted)] hover:text-[var(--auth-text)]"
-              }`}
-            >
-              {c}
-            </button>
-          ))}
-        </div>
-      </div>
-
       <div className="relative overflow-hidden rounded-xl border border-[var(--auth-border)] bg-[var(--auth-surface)]">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_85%_20%,rgba(76,148,255,0.24),transparent_35%),radial-gradient(circle_at_20%_80%,rgba(0,194,120,0.14),transparent_35%)]" />
         <div className="relative flex items-center justify-between gap-6 px-6 py-7 md:px-10">
@@ -262,7 +227,7 @@ export const Markets = () => {
                 "Name",
                 "Price",
                 "24h Volume",
-                category === "FUTURES" ? "Open Interest" : "Market Cap",
+                "Market Cap",
                 "24h Change",
                 "Last 7 Days",
               ].map((h) => (
@@ -280,8 +245,6 @@ export const Markets = () => {
               <MarketRow
                 key={m.symbol}
                 market={m}
-                category={category}
-                openInterest={oiMap.get(m.symbol)}
                 klinePoints={klineMap.get(m.symbol)}
               />
             ))}
@@ -311,13 +274,9 @@ export const Markets = () => {
 
 function MarketRow({
   market,
-  category,
-  openInterest,
   klinePoints,
 }: {
   market: Ticker;
-  category: "SPOT" | "FUTURES";
-  openInterest?: string;
   klinePoints?: number[];
 }) {
   const router = useRouter();
@@ -326,12 +285,7 @@ function MarketRow({
     : null;
   const isPositive = change !== null && change >= 0;
 
-  const thirdColValue =
-    category === "FUTURES"
-      ? openInterest && market.lastPrice
-        ? formatUsd(String(Number(openInterest) * Number(market.lastPrice)))
-        : "—"
-      : "—";
+  const thirdColValue = "—";
   const baseToken = (
     market.baseCurrency ||
     market.symbol.split(/[_-]/)[0] ||
