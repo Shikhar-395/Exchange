@@ -3,7 +3,7 @@ import axios from "axios";
 const BASE_URL = process.env.BASE_URL ?? "http://localhost:3001";
 const USER_ID = process.env.MARKET_MAKER_USER_ID ?? "5";
 
-const TICK_MS = 200;
+const TICK_MS = Number(process.env.TICK_MS ?? 1500);
 const REAL_PRICE_REFRESH_MS = 60_000;
 const RAMP_WINDOW_MS = 60_000;
 const LADDER_LEVELS = 8;
