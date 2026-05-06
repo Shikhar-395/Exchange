@@ -108,12 +108,7 @@ const TOP_BASES = [
   "ADA",
   "AVAX",
   "LINK",
-  "SUI",
   "TON",
-  "DOT",
-  "LTC",
-  "NEAR",
-  "PEPE",
 ];
 
 const RAW_SYMBOLS = TOP_BASES.flatMap((base) => [

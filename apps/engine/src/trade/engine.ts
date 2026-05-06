@@ -455,7 +455,7 @@ export class Engine {
   setBaseBalances() {
     // Test users: large USDC balance + common base assets for market making
     const testUsers = ["1", "2", "5"];
-    const testAssets = ["SOL", "BTC", "ETH", "BNB", "XRP", "SUI", "DOGE"];
+    const testAssets = ["SOL", "BTC", "ETH", "BNB", "XRP", "DOGE"];
 
     for (const userId of testUsers) {
       const balance: UserBalance = {

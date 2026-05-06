@@ -59,23 +59,18 @@ const PINNED_TOKEN_ORDER = [
   "ADA",
   "AVAX",
   "LINK",
-  "SUI",
   "TON",
-  "DOT",
-  "LTC",
-  "NEAR",
-  "PEPE",
 ] as const;
 
 const topSections = [
   {
     title: "New",
     rows: [
-      { symbol: "PEPE-PERP", price: "$0.00001234", change: 4.21 },
-      { symbol: "NEAR-PERP", price: "$5.12", change: 2.18 },
       { symbol: "TON-PERP", price: "$5.78", change: -1.04 },
-      { symbol: "SUI-PERP", price: "$3.45", change: 3.67 },
       { symbol: "LINK-PERP", price: "$23.40", change: 1.1 },
+      { symbol: "AVAX-PERP", price: "$36.20", change: 6.51 },
+      { symbol: "ADA-PERP", price: "$0.62", change: -3.64 },
+      { symbol: "DOGE-PERP", price: "$0.18", change: 8.46 },
     ],
   },
   {
@@ -84,8 +79,8 @@ const topSections = [
       { symbol: "DOGE-PERP", price: "$0.18", change: 8.46 },
       { symbol: "AVAX-PERP", price: "$36.20", change: 6.51 },
       { symbol: "ADA-PERP", price: "$0.62", change: -3.64 },
-      { symbol: "DOT-PERP", price: "$7.85", change: 5.73 },
-      { symbol: "LTC-PERP", price: "$92.10", change: -2.13 },
+      { symbol: "LINK-PERP", price: "$23.40", change: 1.1 },
+      { symbol: "TON-PERP", price: "$5.78", change: -1.04 },
     ],
   },
   {
