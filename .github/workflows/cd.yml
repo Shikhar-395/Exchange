@@ -201,87 +201,14 @@ jobs:
           docker push ghcr.io/nagmani001/exchange/web:latest
           docker push ghcr.io/nagmani001/exchange/web:${{ github.sha }}
 
-  start-auxiliary:
-    needs: changes
-    if: always() && !failure() && !cancelled()
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Copy auxiliary compose to VM
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USERNAME }}
-          key: ${{ secrets.SSH_KEY }}
-          passphrase: ${{ secrets.SSH_PASSPHRASE }}
-          source: docker/compose-files/docker-compose-auxilary-services.yml
-          target: /home/${{ secrets.SSH_USERNAME }}/exchange/
-          strip_components: 2
-
-      - name: Start auxiliary services and wait for health
-        uses: appleboy/ssh-action@v1
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USERNAME }}
-          key: ${{ secrets.SSH_KEY }}
-          passphrase: ${{ secrets.SSH_PASSPHRASE }}
-          script: |
-            cd /home/${{ secrets.SSH_USERNAME }}/exchange
-            docker compose -f docker-compose-auxilary-services.yml up -d
-            until docker exec database pg_isready -U postgres; do sleep 2; done
-            until docker exec timescaledb pg_isready -U exchange; do sleep 2; done
-
-  migrate:
+  deploy:
     needs:
-      - start-auxiliary
       - build-backend
       - build-engine
       - build-db-processor
       - build-websocket
       - build-market-maker
       - build-web
-    if: always() && !failure() && !cancelled()
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: pnpm/action-setup@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 24
-          cache: pnpm
-
-      - run: pnpm install --frozen-lockfile
-
-      - name: Prisma generate + migrate deploy
-        working-directory: packages/database
-        env:
-          DATABASE_URL: postgresql://postgres:nagmani@13.53.71.160:5432/postgres
-        run: |
-          pnpm exec prisma generate
-          pnpm exec prisma migrate deploy
-
-      - name: Seed Postgres markets
-        working-directory: packages/database
-        env:
-          DATABASE_URL: postgresql://postgres:nagmani@13.53.71.160:5432/postgres
-        run: pnpm exec tsx src/seed.ts
-
-      - name: Init TimescaleDB schema
-        working-directory: apps/db-processor
-        env:
-          DATABASE_URL: postgresql://postgres:nagmani@13.53.71.160:5432/postgres
-          TIMESCALE_USER: exchange
-          TIMESCALE_HOST: 13.53.71.160
-          TIMESCALE_DATABASE: exchange
-          TIMESCALE_PASSWORD: nagmani
-          TIMESCALE_PORT: "5433"
-        run: pnpm exec tsx src/seedTimescale.ts
-
-  deploy:
-    needs: migrate
     if: always() && !failure() && !cancelled()
     runs-on: ubuntu-latest
     steps:
@@ -298,7 +225,7 @@ jobs:
           target: /home/${{ secrets.SSH_USERNAME }}/exchange/
           strip_components: 2
 
-      - name: Deploy to VM
+      - name: Deploy stack to VM
         uses: appleboy/ssh-action@v1
         with:
           host: ${{ secrets.SSH_HOST }}
@@ -306,21 +233,89 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           passphrase: ${{ secrets.SSH_PASSPHRASE }}
           script: |
+            set -euo pipefail
             cd /home/${{ secrets.SSH_USERNAME }}/exchange
 
             echo "${{ secrets.GHCR_PAT }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
             docker compose -f docker-compose-deploy.yml pull
+            docker compose -f docker-compose-deploy.yml up -d
 
-            docker compose -f docker-compose-deploy.yml up -d --no-deps backend
-            docker compose -f docker-compose-deploy.yml up -d --no-deps engine
-            docker compose -f docker-compose-deploy.yml up -d --no-deps db-processor
-            docker compose -f docker-compose-deploy.yml up -d --no-deps websocket
-            docker compose -f docker-compose-deploy.yml up -d --no-deps market-maker
-            docker compose -f docker-compose-deploy.yml up -d --no-deps web
+            # Wait for DB containers before letting migrate run
+            until docker exec database pg_isready -U postgres; do sleep 2; done
+            until docker exec timescaledb pg_isready -U exchange; do sleep 2; done
+
+  migrate:
+    needs: deploy
+    if: always() && !failure() && !cancelled()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run migrations and seeds on VM
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_KEY }}
+          passphrase: ${{ secrets.SSH_PASSPHRASE }}
+          script: |
+            set -euo pipefail
+
+            # Load nvm if present, install Node 24 + pnpm if missing
+            export NVM_DIR="$HOME/.nvm"
+            if [ ! -s "$NVM_DIR/nvm.sh" ]; then
+              curl -fsSL https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash
+            fi
+            . "$NVM_DIR/nvm.sh"
+            nvm install 24
+            nvm use 24
+            corepack enable
+            corepack prepare pnpm@latest --activate
+
+            # Clone or update repo on VM
+            REPO_DIR="$HOME/exchange-src"
+            if [ ! -d "$REPO_DIR/.git" ]; then
+              git clone https://${{ secrets.REPO_PAT }}@github.com/${{ github.repository }}.git "$REPO_DIR"
+            fi
+            cd "$REPO_DIR"
+            git remote set-url origin https://${{ secrets.REPO_PAT }}@github.com/${{ github.repository }}.git
+            git fetch origin
+            git checkout ${{ github.sha }}
+
+            # Install workspace dependencies
+            pnpm install --frozen-lockfile
+
+            # Prisma generate + migrate (DATABASE_URL from packages/database/.env)
+            pnpm --filter @repo/database exec prisma generate
+            pnpm --filter @repo/database exec prisma migrate deploy
+
+            # Seed Postgres markets (uses packages/database/.env)
+            pnpm --filter @repo/database run seed
+
+            # Seed TimescaleDB schema (uses apps/db-processor/.env)
+            pnpm --filter db-processor run seed
+
+  verify:
+    needs: migrate
+    if: always() && !failure() && !cancelled()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify app health and prune images
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_KEY }}
+          passphrase: ${{ secrets.SSH_PASSPHRASE }}
+          script: |
+            set -euo pipefail
+            cd /home/${{ secrets.SSH_USERNAME }}/exchange
+
+            # App containers may have been crash-looping until migrate finished.
+            # Restart them once now that schema + seeds are in place.
+            docker compose -f docker-compose-deploy.yml up -d --no-deps backend engine db-processor websocket market-maker web
 
             sleep 10
-            curl -f --retry 3 --retry-delay 2 http://localhost:3001/health || exit 1
-            curl -f --retry 3 --retry-delay 2 http://localhost:3000 || exit 1
+            curl -f --retry 5 --retry-delay 3 http://localhost:3001/health || exit 1
+            curl -f --retry 5 --retry-delay 3 http://localhost:3000 || exit 1
 
             docker image prune -f
