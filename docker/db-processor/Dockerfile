@@ -16,6 +16,7 @@ WORKDIR /app
 COPY --from=prepare /app/out/json/ .
 RUN pnpm install --frozen-lockfile
 COPY --from=prepare /app/out/full/ .
+RUN cd packages/database && pnpm dlx prisma generate
 RUN pnpm --filter db-processor build
 RUN pnpm deploy --filter=db-processor --prod /prod/db-processor
 
