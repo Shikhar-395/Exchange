@@ -28,33 +28,45 @@ jobs:
         with:
           filters: |
             backend:
+              - '.github/workflows/cd.yml'
               - 'apps/backend/**'
               - 'packages/database/**'
               - 'packages/common/**'
               - 'packages/email/**'
               - 'docker/backend/**'
+              - 'docker/compose-files/docker-compose-deploy.yml'
             engine:
+              - '.github/workflows/cd.yml'
               - 'apps/engine/**'
               - 'packages/database/**'
               - 'packages/common/**'
               - 'docker/engine/**'
+              - 'docker/compose-files/docker-compose-deploy.yml'
             db-processor:
+              - '.github/workflows/cd.yml'
               - 'apps/db-processor/**'
               - 'packages/common/**'
               - 'packages/database/**'
               - 'docker/db-processor/**'
+              - 'docker/compose-files/docker-compose-deploy.yml'
             websocket:
+              - '.github/workflows/cd.yml'
               - 'apps/websocket/**'
               - 'packages/common/**'
               - 'docker/websocket/**'
+              - 'docker/compose-files/docker-compose-deploy.yml'
             market-maker:
+              - '.github/workflows/cd.yml'
               - 'apps/market-maker/**'
               - 'docker/market-maker/**'
+              - 'docker/compose-files/docker-compose-deploy.yml'
             web:
+              - '.github/workflows/cd.yml'
               - 'apps/web/**'
               - 'packages/ui/**'
               - 'packages/common/**'
               - 'docker/web/**'
+              - 'docker/compose-files/docker-compose-deploy.yml'
 
   build-backend:
     needs: changes
