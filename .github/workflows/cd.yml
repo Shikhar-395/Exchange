@@ -8,8 +8,6 @@ on:
 env:
   REGISTRY: ghcr.io
   IMAGE_PREFIX: ${{ vars.IMAGE_PREFIX || 'ghcr.io/shikhar-395/exchange' }}
-  PUBLIC_API_URL: ${{ vars.NEXT_PUBLIC_EXCHANGE_API_URL || 'https://api.exchange.shikhar.site/api/v1' }}
-  PUBLIC_WS_URL: ${{ vars.NEXT_PUBLIC_EXCHANGE_WS_URL || 'wss://ws.exchange.shikhar.site' }}
 
 jobs:
   changes:
@@ -20,7 +18,6 @@ jobs:
       db-processor: ${{ steps.filter.outputs.db-processor }}
       websocket: ${{ steps.filter.outputs.websocket }}
       market-maker: ${{ steps.filter.outputs.market-maker }}
-      web: ${{ steps.filter.outputs.web }}
     steps:
       - uses: actions/checkout@v4
       - uses: dorny/paths-filter@v3
@@ -59,13 +56,6 @@ jobs:
               - '.github/workflows/cd.yml'
               - 'apps/market-maker/**'
               - 'docker/market-maker/**'
-              - 'docker/compose-files/docker-compose-deploy.yml'
-            web:
-              - '.github/workflows/cd.yml'
-              - 'apps/web/**'
-              - 'packages/ui/**'
-              - 'packages/common/**'
-              - 'docker/web/**'
               - 'docker/compose-files/docker-compose-deploy.yml'
 
   build-backend:
@@ -193,31 +183,6 @@ jobs:
             ${{ env.IMAGE_PREFIX }}/market-maker:${{ github.sha }}
             ${{ env.IMAGE_PREFIX }}/market-maker:latest
 
-  build-web:
-    needs: changes
-    if: needs.changes.outputs.web == 'true'
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
-    steps:
-      - uses: actions/checkout@v4
-      - name: Log in to GitHub Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Build web via compose (uses inline build.args)
-        env:
-          NEXT_PUBLIC_EXCHANGE_API_URL: ${{ env.PUBLIC_API_URL }}
-          NEXT_PUBLIC_EXCHANGE_WS_URL: ${{ env.PUBLIC_WS_URL }}
-        run: |
-          docker compose -f docker/compose-files/docker-compose-deploy.yml build web
-          docker tag "$IMAGE_PREFIX/web:latest" "$IMAGE_PREFIX/web:${{ github.sha }}"
-          docker push "$IMAGE_PREFIX/web:latest"
-          docker push "$IMAGE_PREFIX/web:${{ github.sha }}"
-
   deploy:
     needs:
       - build-backend
@@ -225,7 +190,6 @@ jobs:
       - build-db-processor
       - build-websocket
       - build-market-maker
-      - build-web
     if: always() && !failure() && !cancelled()
     runs-on: ubuntu-latest
     steps:
@@ -253,10 +217,17 @@ jobs:
             set -euo pipefail
             cd /home/${{ secrets.SSH_USERNAME }}/exchange
 
+            for file in .env .env.backend .env.engine .env.db-processor .env.websocket .env.market-maker; do
+              if [ ! -f "$file" ]; then
+                echo "Missing $file in $(pwd). Create it on the VM before deployment."
+                exit 1
+              fi
+            done
+
             export IMAGE_PREFIX="${{ env.IMAGE_PREFIX }}"
             export IMAGE_TAG="latest"
-            docker compose -f docker-compose-deploy.yml pull
-            docker compose -f docker-compose-deploy.yml up -d
+            docker compose -f docker-compose-deploy.yml pull backend engine db-processor websocket market-maker
+            docker compose -f docker-compose-deploy.yml up -d redis timescaledb backend engine db-processor websocket market-maker
 
             # Wait for TimescaleDB before letting schema setup run
             until docker exec timescaledb pg_isready -U exchange; do sleep 2; done
@@ -285,9 +256,10 @@ jobs:
             nvm install 24
             nvm use 24
             corepack enable
-            corepack prepare pnpm@latest --activate
+            corepack prepare pnpm@9.0.0 --activate
 
             # Clone or update repo on VM
+            DEPLOY_DIR="$HOME/exchange"
             REPO_DIR="$HOME/exchange-src"
             if [ ! -d "$REPO_DIR/.git" ]; then
               git clone https://github.com/${{ github.repository }}.git "$REPO_DIR"
@@ -299,7 +271,27 @@ jobs:
             # Install workspace dependencies
             pnpm install --frozen-lockfile
 
-            # Prisma generate + migrate (DATABASE_URL from packages/database/.env)
+            set -a
+            . "$DEPLOY_DIR/.env"
+            set +a
+            : "${TIMESCALE_PASSWORD:?Set TIMESCALE_PASSWORD in $DEPLOY_DIR/.env}"
+            MIGRATION_DATABASE_URL="${MIGRATION_DATABASE_URL:-postgresql://exchange:${TIMESCALE_PASSWORD}@localhost:5433/exchange}"
+
+            cat > packages/database/.env <<EOF
+            DATABASE_URL=$MIGRATION_DATABASE_URL
+            DIRECT_URL=$MIGRATION_DATABASE_URL
+            EOF
+
+            cat > apps/db-processor/.env <<EOF
+            DATABASE_URL=$MIGRATION_DATABASE_URL
+            TIMESCALE_USER=exchange
+            TIMESCALE_HOST=localhost
+            TIMESCALE_DATABASE=exchange
+            TIMESCALE_PASSWORD=$TIMESCALE_PASSWORD
+            TIMESCALE_PORT=5433
+            EOF
+
+            # Prisma generate + migrate
             pnpm --filter @repo/database exec prisma generate
             pnpm --filter @repo/database exec prisma migrate deploy
 
@@ -327,10 +319,9 @@ jobs:
 
             # App containers may have been crash-looping until migrate finished.
             # Restart them once now that schema + seeds are in place.
-            docker compose -f docker-compose-deploy.yml up -d --no-deps backend engine db-processor websocket market-maker web
+            docker compose -f docker-compose-deploy.yml up -d --no-deps backend engine db-processor websocket market-maker
 
             sleep 10
             curl -f --retry 5 --retry-delay 3 http://localhost:3001/health || exit 1
-            curl -f --retry 5 --retry-delay 3 http://localhost:3000 || exit 1
 
             docker image prune -f

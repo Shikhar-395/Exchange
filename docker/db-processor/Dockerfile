@@ -2,8 +2,8 @@ ARG NODE_VERSION=24.13.1
 FROM node:${NODE_VERSION}-slim AS base
 
 ENV PNPM_HOME="/pnpm"
-ENV PATH="$PNPM_HOME:$PATH"
-RUN corepack enable
+ENV PATH="$PNPM_HOME:$PNPM_HOME/bin:$PATH"
+RUN corepack enable && corepack prepare pnpm@9.0.0 --activate
 
 FROM base AS prepare
 WORKDIR /app
