@@ -1,10 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { getDepth, getTicker, getTrades } from "../../utils/httpClient";
 import { BidTable } from "./BidTable";
 import { AskTable } from "./AskTable";
 import { SignalingManager } from "../../utils/SignalingManager";
+import { Trade } from "../../utils/types";
+import { formatAmount, formatPrice, splitMarket } from "./format";
 
 function applyUpdates(
   original: [string, string][] | undefined,
@@ -42,6 +44,29 @@ export function Depth({ market }: { market: string }) {
   const [bids, setBids] = useState<[string, string][]>();
   const [asks, setAsks] = useState<[string, string][]>();
   const [price, setPrice] = useState<string>();
+  const [activeTab, setActiveTab] = useState<"book" | "trades">("book");
+  const [trades, setTrades] = useState<Trade[]>([]);
+  const { base, quote } = splitMarket(market);
+
+  // Sizing ref & state
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [maxRows, setMaxRows] = useState(6);
+
+  useEffect(() => {
+    if (!containerRef.current) return;
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const height = entry.contentRect.height;
+        // Price banner height is ~36px
+        // rowHeight is 24px (20px row + 4px vertical margin)
+        const computedRows = Math.floor((height - 36) / (2 * 24));
+        const validRows = Math.max(3, Math.min(15, computedRows));
+        setMaxRows(validRows);
+      }
+    });
+    observer.observe(containerRef.current);
+    return () => observer.disconnect();
+  }, []);
 
   useEffect(() => {
     SignalingManager.getInstance().registerCallback(
@@ -55,8 +80,27 @@ export function Depth({ market }: { market: string }) {
 
     SignalingManager.getInstance().registerCallback(
       "trade",
-      (data: { price: string }) => {
+      (data: {
+        price: string;
+        quantity: string;
+        tradeId: number;
+        isBuyerMaker: boolean;
+        symbol: string;
+      }) => {
         setPrice(data.price);
+        setTrades((prev) => {
+          const newTrade: Trade = {
+            id: data.tradeId,
+            isBuyerMaker: data.isBuyerMaker,
+            price: data.price,
+            quantity: data.quantity,
+            quoteQuantity: String(Number(data.price) * Number(data.quantity)),
+            timestamp: Date.now(),
+          };
+          // Filter duplicates and keep rolling window of 50
+          const next = [newTrade, ...prev.filter((t) => t.id !== newTrade.id)];
+          return next.slice(0, 50);
+        });
       },
       `DEPTH-TRADE-${market}`,
     );
@@ -84,8 +128,10 @@ export function Depth({ market }: { market: string }) {
     getTicker(market)
       .then((t) => setPrice(t.lastPrice ?? undefined))
       .catch(() => {});
+
     getTrades(market)
       .then((t) => {
+        setTrades(t.slice(0, 50));
         const first = t[0];
         if (first) setPrice(first.price);
       })
@@ -113,35 +159,61 @@ export function Depth({ market }: { market: string }) {
 
   return (
     <div className="flex h-full flex-col bg-[#090d14] px-3 py-2 text-[#d7deea]">
-      <DepthHeader />
-      <TableHeader />
-      <div className="flex min-h-0 flex-1 flex-col">
-        <div className="flex min-h-0 flex-1 flex-col justify-end overflow-hidden">
-          {asks && <AskTable asks={asks} />}
-        </div>
-        {price && (
-          <div className="my-1.5 border-y border-white/10 bg-[#0a1019] px-1.5 py-1 text-[34px] leading-none font-semibold tracking-tight text-[#00d8a0]">
-            {formatPrice(price)}
+      <DepthHeader activeTab={activeTab} setActiveTab={setActiveTab} />
+      {activeTab === "book" ? (
+        <>
+          <TableHeader base={base} quote={quote} />
+          <div ref={containerRef} className="flex min-h-0 flex-1 flex-col">
+            <div className="flex min-h-0 flex-1 flex-col justify-end overflow-hidden">
+              {asks && <AskTable asks={asks} maxRows={maxRows} />}
+            </div>
+            {price && (
+              <div className="my-1 border-y border-white/10 bg-[#0a1019] px-1.5 py-0.5 text-[24px] leading-none font-semibold tracking-tight text-[#00d8a0]">
+                {formatPrice(price)}
+              </div>
+            )}
+            <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+              {bids && <BidTable bids={bids} maxRows={maxRows} />}
+            </div>
           </div>
-        )}
-        <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-          {bids && <BidTable bids={bids} />}
-        </div>
-      </div>
-      <DepthFooter />
+          <DepthFooter />
+        </>
+      ) : (
+        <TradesTable trades={trades} base={base} quote={quote} />
+      )}
     </div>
   );
 }
 
-function DepthHeader() {
+function DepthHeader({
+  activeTab,
+  setActiveTab,
+}: {
+  activeTab: "book" | "trades";
+  setActiveTab: (tab: "book" | "trades") => void;
+}) {
   return (
     <div className="mb-2">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <button className="rounded-md border border-white/10 bg-[#111a27] px-3 py-1 text-sm font-semibold text-white">
+          <button
+            onClick={() => setActiveTab("book")}
+            className={`rounded-md px-3 py-1 text-sm font-semibold transition-all duration-200 cursor-pointer ${
+              activeTab === "book"
+                ? "border border-white/10 bg-[#111a27] text-white"
+                : "text-[#7f8ea4] hover:text-[#adc0d9]"
+            }`}
+          >
             Book
           </button>
-          <button className="rounded-md px-3 py-1 text-sm font-semibold text-[#7f8ea4] hover:text-[#adc0d9]">
+          <button
+            onClick={() => setActiveTab("trades")}
+            className={`rounded-md px-3 py-1 text-sm font-semibold transition-all duration-200 cursor-pointer ${
+              activeTab === "trades"
+                ? "border border-white/10 bg-[#111a27] text-white"
+                : "text-[#7f8ea4] hover:text-[#adc0d9]"
+            }`}
+          >
             Trades
           </button>
         </div>
@@ -156,12 +228,12 @@ function DepthHeader() {
   );
 }
 
-function TableHeader() {
+function TableHeader({ base, quote }: { base: string; quote: string }) {
   return (
     <div className="mb-1 flex justify-between border-b border-white/10 pb-1 text-[12px] font-semibold leading-tight">
-      <div className="text-[#f5f7fa]">Price (USD)</div>
-      <div className="text-[#93a1b7]">Size (ETH)</div>
-      <div className="text-[#93a1b7]">Total (ETH)</div>
+      <div className="text-[#f5f7fa]">Price ({quote})</div>
+      <div className="text-[#93a1b7]">Size ({base})</div>
+      <div className="text-[#93a1b7]">Total ({base})</div>
     </div>
   );
 }
@@ -180,13 +252,60 @@ function DepthFooter() {
   );
 }
 
-function formatPrice(price: string): string {
-  const value = Number(price);
-  if (Number.isNaN(value)) {
-    return price;
-  }
-  return value.toLocaleString("en-US", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
+function TradesTable({
+  trades,
+  base,
+  quote,
+}: {
+  trades: Trade[];
+  base: string;
+  quote: string;
+}) {
+  return (
+    <div className="flex flex-col min-h-0 flex-1 overflow-hidden">
+      {/* Header */}
+      <div className="mb-1 flex justify-between border-b border-white/10 pb-1 text-[12px] font-semibold leading-tight px-1.5">
+        <div className="text-[#f5f7fa]">Price ({quote})</div>
+        <div className="text-[#93a1b7] text-right pr-4">Size ({base})</div>
+        <div className="text-[#93a1b7] text-right">Time</div>
+      </div>
+      {/* Scrollable list of trades */}
+      <div className="flex-1 overflow-y-auto pr-0.5 custom-scrollbar">
+        {trades.length === 0 ? (
+          <div className="flex h-full items-center justify-center text-xs text-[#7f8ea4] py-8">
+            No recent trades
+          </div>
+        ) : (
+          trades.map((trade) => {
+            const date = new Date(trade.timestamp);
+            const timeString = isNaN(date.getTime())
+              ? "--:--:--"
+              : date.toLocaleTimeString("en-US", {
+                  hour12: false,
+                  hour: "2-digit",
+                  minute: "2-digit",
+                  second: "2-digit",
+                });
+            const isSell = trade.isBuyerMaker;
+            return (
+              <div
+                key={trade.id}
+                className="relative my-[2px] flex h-[20px] w-full items-center px-1.5 text-[13px] font-semibold leading-none tracking-tight hover:bg-white/[0.02] rounded-[2px]"
+              >
+                <div className={isSell ? "text-[#e35d66]" : "text-[#00d8a0]"}>
+                  {formatPrice(trade.price)}
+                </div>
+                <div className="flex-1 text-right text-[#e3e9f3] pr-4 tabular-nums">
+                  {formatAmount(trade.quantity)}
+                </div>
+                <div className="text-[#7f8ea4] text-[11px] font-normal w-[65px] text-right tabular-nums">
+                  {timeString}
+                </div>
+              </div>
+            );
+          })
+        )}
+      </div>
+    </div>
+  );
 }

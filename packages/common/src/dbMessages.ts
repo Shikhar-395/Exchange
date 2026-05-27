@@ -20,5 +20,7 @@ export type DbMessage =
         price?: string;
         quantity?: string;
         side?: "buy" | "sell";
+        userId?: string;
+        status?: "OPEN" | "PARTIALLY_FILLED" | "FILLED" | "CANCELLED";
       };
     };

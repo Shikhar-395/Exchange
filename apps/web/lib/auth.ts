@@ -4,5 +4,8 @@ import { getBackendUrl } from "./util";
 
 export const authClient = createAuthClient({
   baseURL: getBackendUrl(),
+  fetchOptions: {
+    credentials: "include",
+  },
   plugins: [emailOTPClient()],
 });

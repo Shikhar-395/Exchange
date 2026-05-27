@@ -15,7 +15,7 @@ function stop_services() {
 
 trap stop_services EXIT INT TERM
 
-DATABASE_URL="postgresql://postgres:nagmani@localhost:5432/postgres"
+DATABASE_URL="${DATABASE_URL:-postgresql://postgres:password@localhost:5432/postgres}"
 
 echo "Starting auxilary services"
 docker compose -f "$PROJECT_ROOT/docker/compose-files/docker-compose-integration-test.yml" up -d --wait
@@ -24,7 +24,7 @@ echo '🟡 - Waiting for database to be ready...'
 $PROJECT_ROOT/apps/integration-test/src/scripts/wait-for-it.sh localhost:5432 -- echo "database has started"
 
 echo "Applying migration"
-cd $PROJECT_ROOT/packages/database && DATABASE_URL="postgresql://postgres:nagmani@localhost:5432/postgres" pnpm dlx prisma migrate dev --name init --schema "$PROJECT_ROOT/packages/database/prisma/schema.prisma"
+cd $PROJECT_ROOT/packages/database && DATABASE_URL="$DATABASE_URL" pnpm dlx prisma migrate dev --name init --schema "$PROJECT_ROOT/packages/database/prisma/schema.prisma"
 
 echo "Generate Client"
 cd $PROJECT_ROOT/packages/database && pnpm dlx prisma generate --schema "$PROJECT_ROOT/packages/database/prisma/schema.prisma"

@@ -14,7 +14,7 @@ export function SocialAuthButtons() {
   async function handleSocialSignIn(provider: Provider) {
     try {
       setLoadingProvider(provider);
-      const callbackURL = `${window.location.origin}/markets`;
+      const callbackURL = `${window.location.origin}/`;
       const { error } = await authClient.signIn.social({
         provider,
         callbackURL,
@@ -36,7 +36,7 @@ export function SocialAuthButtons() {
         type="button"
         onClick={() => handleSocialSignIn("google")}
         disabled={loadingProvider !== null}
-        className="h-auto w-full rounded-xl border border-[var(--auth-border)] bg-[var(--auth-surface-strong)] py-3 text-sm font-semibold text-[var(--auth-text)] hover:bg-[var(--auth-surface)]"
+        className="h-auto w-full rounded-xl border border-[var(--auth-border)] bg-[var(--auth-surface-strong)] py-3 text-sm font-semibold text-[var(--auth-text)] hover:bg-[var(--auth-surface)] cursor-pointer"
       >
         <GoogleIcon />
         {loadingProvider === "google"
@@ -48,7 +48,7 @@ export function SocialAuthButtons() {
         type="button"
         onClick={() => handleSocialSignIn("github")}
         disabled={loadingProvider !== null}
-        className="h-auto w-full rounded-xl border border-[var(--auth-border)] bg-[var(--auth-surface-strong)] py-3 text-sm font-semibold text-[var(--auth-text)] hover:bg-[var(--auth-surface)]"
+        className="h-auto w-full rounded-xl border border-[var(--auth-border)] bg-[var(--auth-surface-strong)] py-3 text-sm font-semibold text-[var(--auth-text)] hover:bg-[var(--auth-surface)] cursor-pointer"
       >
         <Github className="size-4" />
         {loadingProvider === "github"

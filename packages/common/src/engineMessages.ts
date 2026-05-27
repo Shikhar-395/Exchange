@@ -1,6 +1,7 @@
 import {
   CANCEL_ORDER,
   CREATE_ORDER,
+  GET_BALANCE,
   GET_DEPTH,
   GET_OPEN_ORDERS,
   ON_RAMP,
@@ -22,6 +23,7 @@ export type MessageToEngine =
       data: {
         orderId: string;
         market: string;
+        userId: string;
       };
     }
   | {
@@ -43,6 +45,13 @@ export type MessageToEngine =
       data: {
         userId: string;
         market: string;
+      };
+    }
+  | {
+      type: typeof GET_BALANCE;
+      data: {
+        userId: string;
+        currency: string;
       };
     };
 
@@ -76,6 +85,12 @@ export type MessageFromEngine =
       };
     }
   | {
+      type: "ORDER_REJECTED";
+      payload: {
+        message: string;
+      };
+    }
+  | {
       type: "OPEN_ORDERS";
       payload: {
         orderId: string;
@@ -85,4 +100,12 @@ export type MessageFromEngine =
         side: "buy" | "sell";
         userId: string;
       }[];
+    }
+  | {
+      type: "BALANCE";
+      payload: {
+        currency: string;
+        available: number;
+        locked: number;
+      };
     };

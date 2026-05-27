@@ -4,6 +4,9 @@ import {
   KLine,
   MarketDataKlinesResponse,
   OpenInterest,
+  Balance,
+  OrderHistoryItem,
+  OpenOrder,
   Ticker,
   Trade,
 } from "./types";
@@ -53,6 +56,43 @@ export async function getOpenInterest(): Promise<OpenInterest[]> {
   return response.data;
 }
 
+export async function getBalance(currency = "USDC"): Promise<Balance> {
+  const response = await axios.get(`${BASE_URL}/balance`, {
+    params: { currency },
+    withCredentials: true,
+  });
+  return response.data;
+}
+
+export async function getOpenOrders(market: string): Promise<OpenOrder[]> {
+  const response = await axios.get(`${BASE_URL}/order/open`, {
+    params: { market },
+    withCredentials: true,
+  });
+  return response.data;
+}
+
+export async function getOrderHistory(
+  market?: string,
+): Promise<OrderHistoryItem[]> {
+  const response = await axios.get(`${BASE_URL}/order/history`, {
+    params: market ? { market } : undefined,
+    withCredentials: true,
+  });
+  return response.data;
+}
+
+export async function cancelOrder(payload: {
+  market: string;
+  orderId: string;
+}) {
+  const response = await axios.delete(`${BASE_URL}/order`, {
+    data: payload,
+    withCredentials: true,
+  });
+  return response.data;
+}
+
 export async function getMarketDataKlines(
   symbol?: string,
 ): Promise<MarketDataKlinesResponse> {
@@ -75,7 +115,6 @@ export async function createOrder(payload: {
   price: string;
   quantity: string;
   side: "buy" | "sell";
-  userId: string;
 }) {
   const response = await axios.post(`${BASE_URL}/order`, payload, {
     withCredentials: true,

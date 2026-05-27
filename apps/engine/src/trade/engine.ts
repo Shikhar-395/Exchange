@@ -3,11 +3,13 @@ import path from "path";
 
 const SNAPSHOT_DIR = process.env.SNAPSHOT_DIR ?? ".";
 const SNAPSHOT_PATH = path.join(SNAPSHOT_DIR, "snapshot.json");
+const DEMO_BALANCE = Number(process.env.DEMO_BALANCE ?? 500_000);
 
 import {
   BASE_CURRENCY,
   CANCEL_ORDER,
   CREATE_ORDER,
+  GET_BALANCE,
   GET_DEPTH,
   GET_OPEN_ORDERS,
   ON_RAMP,
@@ -30,6 +32,7 @@ interface UserBalance {
 export class Engine {
   private orderbooks: Orderbook[] = [];
   private balances: Map<string, UserBalance> = new Map();
+  private static DEFAULT_TEST_USERS = ["1", "2", "5"];
 
   constructor() {
     setInterval(() => {
@@ -116,8 +119,11 @@ export class Engine {
         } catch (e) {
           console.log(e);
           RedisManager.getInstance().sendToApi(clientId, {
-            type: "ORDER_CANCELLED",
-            payload: { orderId: "", executedQty: 0, remainingQty: 0 },
+            type: "ORDER_REJECTED",
+            payload: {
+              message:
+                e instanceof Error ? e.message : "Order could not be placed",
+            },
           });
         }
         break;
@@ -139,6 +145,9 @@ export class Engine {
           if (!order) {
             console.log("from cancel order 2 ");
             throw new Error("No order found");
+          }
+          if (order.userId !== message.data.userId) {
+            throw new Error("Order does not belong to user");
           }
 
           const quoteAsset = cancelOrderbook.quoteAsset;
@@ -162,6 +171,15 @@ export class Engine {
             this.balances.get(order.userId)![baseAsset]!.locked -= leftQuantity;
             if (price) this.sendUpdatedDepthAt(price.toString(), cancelMarket);
           }
+
+          RedisManager.getInstance().pushMessage({
+            type: ORDER_UPDATE,
+            data: {
+              orderId,
+              executedQty: 0,
+              status: "CANCELLED",
+            },
+          });
 
           RedisManager.getInstance().sendToApi(clientId, {
             type: "ORDER_CANCELLED",
@@ -192,6 +210,33 @@ export class Engine {
           });
         } catch (e) {
           console.log(e);
+        }
+        break;
+
+      case GET_BALANCE:
+        try {
+          this.ensureBalance(message.data.userId, message.data.currency);
+          const balance = this.balances.get(message.data.userId)![
+            message.data.currency
+          ]!;
+          RedisManager.getInstance().sendToApi(clientId, {
+            type: "BALANCE",
+            payload: {
+              currency: message.data.currency,
+              available: balance.available,
+              locked: balance.locked,
+            },
+          });
+        } catch (e) {
+          console.log(e);
+          RedisManager.getInstance().sendToApi(clientId, {
+            type: "BALANCE",
+            payload: {
+              currency: message.data.currency,
+              available: 0,
+              locked: 0,
+            },
+          });
         }
         break;
 
@@ -283,6 +328,13 @@ export class Engine {
         price: order.price.toString(),
         quantity: order.quantity.toString(),
         side: order.side,
+        userId: order.userId,
+        status:
+          executedQty === 0
+            ? "OPEN"
+            : executedQty >= order.quantity
+              ? "FILLED"
+              : "PARTIALLY_FILLED",
       },
     });
     fills.forEach((fill) => {
@@ -373,14 +425,27 @@ export class Engine {
     }
   }
 
-  private static TEST_USERS = new Set(["1", "2", "5"]);
+  private static getTestUsers() {
+    const extraUsers =
+      process.env.EXTRA_TEST_USER_IDS?.split(",")
+        .map((id) => id.trim())
+        .filter(Boolean) ?? [];
+    return new Set([...Engine.DEFAULT_TEST_USERS, ...extraUsers]);
+  }
+
+  private static shouldEnableDemoBalances() {
+    return process.env.ENABLE_DEMO_BALANCES === "true";
+  }
 
   ensureBalance(userId: string, currency: string) {
     if (!this.balances.has(userId)) {
       this.balances.set(userId, {});
     }
     if (!this.balances.get(userId)![currency]) {
-      const available = Engine.TEST_USERS.has(userId) ? 100_000_000 : 0;
+      const available =
+        Engine.getTestUsers().has(userId) || Engine.shouldEnableDemoBalances()
+          ? DEMO_BALANCE
+          : 0;
       this.balances.get(userId)![currency] = { available, locked: 0 };
     }
   }
@@ -453,16 +518,16 @@ export class Engine {
   }
 
   setBaseBalances() {
-    // Test users: large USDC balance + common base assets for market making
-    const testUsers = ["1", "2", "5"];
+    // Test users: demo USDC balance + common base assets for market making.
+    const testUsers = Array.from(Engine.getTestUsers());
     const testAssets = ["SOL", "BTC", "ETH", "BNB", "XRP", "DOGE"];
 
     for (const userId of testUsers) {
       const balance: UserBalance = {
-        [BASE_CURRENCY]: { available: 100_000_000, locked: 0 },
+        [BASE_CURRENCY]: { available: DEMO_BALANCE, locked: 0 },
       };
       for (const asset of testAssets) {
-        balance[asset] = { available: 100_000_000, locked: 0 };
+        balance[asset] = { available: DEMO_BALANCE, locked: 0 };
       }
       this.balances.set(userId, balance);
     }

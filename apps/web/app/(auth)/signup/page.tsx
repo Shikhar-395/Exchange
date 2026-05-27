@@ -9,7 +9,6 @@ import { useMutation } from "@tanstack/react-query";
 import { authClient } from "@/lib/auth";
 import { toast } from "@repo/ui/lib/toast";
 import { useRouter } from "next/navigation";
-import { OtpDialog } from "@/components/otp-dialogue";
 import { GenericAuthPage } from "@/components/generic-auth-page";
 import { SocialAuthButtons } from "@/components/social-auth-buttons";
 
@@ -22,7 +21,6 @@ export default function Page() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [otpOpen, setOtpOpen] = useState(false);
   const [errors, setErrors] = useState<{
     name?: string;
     email?: string;
@@ -52,54 +50,15 @@ export default function Page() {
 
         toast.error(res.error.message);
       } else {
-        const { error } = await authClient.emailOtp.sendVerificationOtp({
-          email: signupInputs.email,
-          type: "email-verification",
-        });
-        if (error) {
-          toast.error(error.message);
-        } else {
-          setEmail(signupInputs.email);
-          toast.success("Verification code sent to your email");
-          setOtpOpen(true);
-        }
+        toast.success("Account created successfully!");
+        router.push("/");
+        router.refresh();
       }
     },
     onError: (err) => {
       toast.error(err.message);
     },
   });
-
-  const verifyMutation = useMutation({
-    mutationFn: async (otp: string) => {
-      const res = await authClient.emailOtp.verifyEmail({
-        email,
-        otp,
-      });
-      if (res.error) {
-        toast.error(res.error.message);
-      } else {
-        toast.success("Email verified successfully!");
-        setOtpOpen(false);
-        router.push("/markets");
-      }
-    },
-    onError: (err) => {
-      toast.error(err.message);
-    },
-  });
-
-  async function handleResendOtp() {
-    const { error } = await authClient.emailOtp.sendVerificationOtp({
-      email,
-      type: "email-verification",
-    });
-    if (error) {
-      toast.error(error.message);
-    } else {
-      toast.success("Verification code resent");
-    }
-  }
 
   return (
     <GenericAuthPage
@@ -209,15 +168,6 @@ export default function Page() {
           Create Account
         </Button>
       </form>
-
-      <OtpDialog
-        isOpen={otpOpen}
-        onOpenChange={setOtpOpen}
-        email={email}
-        onSubmit={(otp) => verifyMutation.mutate(otp)}
-        onResend={handleResendOtp}
-        isLoading={verifyMutation.isPending}
-      />
     </GenericAuthPage>
   );
 }

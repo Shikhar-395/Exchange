@@ -92,18 +92,18 @@ The backend is also a synchronous Redis request/reply bridge. `apps/backend/src/
 
 Service communication summary:
 
-| From | To | Mechanism | Actual channel/endpoint |
-|---|---|---|---|
-| Browser | Backend | HTTP REST | `/api/v1/order`, `/api/v1/depth`, `/api/v1/klines`, `/api/v1/tickers`, `/api/v1/openInterest`, `/wapi/v1/marketDataKlines` |
-| Backend | Engine | Redis list queue | `lPush("messages", JSON.stringify({ clientId, message }))` |
-| Engine | Backend | Redis pub/sub reply | `publish(clientId, MessageFromEngine)` |
-| Engine | DB Processor | Redis list queue | `lPush("db_processor", DbMessage)` |
-| Engine | WebSocket Server | Redis pub/sub | `depth@${market}`, `trade@${market}` |
-| Browser | WebSocket Server | WebSocket | JSON `SUBSCRIBE` / `UNSUBSCRIBE` messages |
-| Backend | Postgres | Prisma | Auth, markets, users, balances, orders schema |
-| Engine | Postgres | Prisma | Active market load on startup |
-| DB Processor | TimescaleDB | `pg` SQL | `trades`, `klines_1m`, `klines_1h`, `klines_1w` |
-| Market Maker | Backend | HTTP REST | `/api/v1/tickers`, `/api/v1/depth`, `/api/v1/order/open`, `/api/v1/order` |
+| From         | To               | Mechanism           | Actual channel/endpoint                                                                                                    |
+| ------------ | ---------------- | ------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| Browser      | Backend          | HTTP REST           | `/api/v1/order`, `/api/v1/depth`, `/api/v1/klines`, `/api/v1/tickers`, `/api/v1/openInterest`, `/wapi/v1/marketDataKlines` |
+| Backend      | Engine           | Redis list queue    | `lPush("messages", JSON.stringify({ clientId, message }))`                                                                 |
+| Engine       | Backend          | Redis pub/sub reply | `publish(clientId, MessageFromEngine)`                                                                                     |
+| Engine       | DB Processor     | Redis list queue    | `lPush("db_processor", DbMessage)`                                                                                         |
+| Engine       | WebSocket Server | Redis pub/sub       | `depth@${market}`, `trade@${market}`                                                                                       |
+| Browser      | WebSocket Server | WebSocket           | JSON `SUBSCRIBE` / `UNSUBSCRIBE` messages                                                                                  |
+| Backend      | Postgres         | Prisma              | Auth, markets, users, balances, orders schema                                                                              |
+| Engine       | Postgres         | Prisma              | Active market load on startup                                                                                              |
+| DB Processor | TimescaleDB      | `pg` SQL            | `trades`, `klines_1m`, `klines_1h`, `klines_1w`                                                                            |
+| Market Maker | Backend          | HTTP REST           | `/api/v1/tickers`, `/api/v1/depth`, `/api/v1/order/open`, `/api/v1/order`                                                  |
 
 Current implementation note: `apps/web` subscribes to `ticker@${market}` in `Depth`, and `SignalingManager` knows how to handle `data.e === "ticker"`. There is no publisher for `ticker@${market}` in `apps/backend`, `apps/engine`, or `apps/websocket` today.
 
@@ -153,15 +153,15 @@ This lets apps import internal packages through workspace aliases such as `@repo
 
 The root `package.json` declares `packageManager: "pnpm@9.0.0"` and scripts:
 
-| Script | Meaning |
-|---|---|
-| `pnpm build` | Runs `turbo run build` across the monorepo. |
-| `pnpm dev` | Runs `turbo run dev`. |
+| Script             | Meaning                                                                                                                    |
+| ------------------ | -------------------------------------------------------------------------------------------------------------------------- |
+| `pnpm build`       | Runs `turbo run build` across the monorepo.                                                                                |
+| `pnpm dev`         | Runs `turbo run dev`.                                                                                                      |
 | `pnpm dev:backend` | Runs dev for `backend`, `engine`, `db-processor`, `market-maker`, and `websocket`. It intentionally excludes the frontend. |
-| `pnpm lint` | Runs `turbo run lint`. |
-| `pnpm check-types` | Runs `turbo run check-types`. |
-| `pnpm format` | Runs Prettier over `**/*.{ts,tsx,md}`. |
-| `pnpm prepare` | Installs Husky hooks. |
+| `pnpm lint`        | Runs `turbo run lint`.                                                                                                     |
+| `pnpm check-types` | Runs `turbo run check-types`.                                                                                              |
+| `pnpm format`      | Runs Prettier over `**/*.{ts,tsx,md}`.                                                                                     |
+| `pnpm prepare`     | Installs Husky hooks.                                                                                                      |
 
 ### Turborepo
 
@@ -205,7 +205,7 @@ The hook enforces repository formatting before commits and re-stages modified tr
 `.github/workflows/cd.yml`:
 
 - Uses `dorny/paths-filter` to detect which app/package areas changed.
-- Builds and pushes Docker images to `ghcr.io/nagmani001/exchange/*`.
+- Builds and pushes Docker images to `${IMAGE_PREFIX}/*` (for example `ghcr.io/shikhar/exchange/*`).
 - Starts auxiliary services on a VM.
 - Runs Prisma generate/migrate and seeds Postgres markets.
 - Initializes the Timescale schema through `apps/db-processor/src/seedTimescale.ts`.
@@ -231,35 +231,35 @@ Responsibility boundary:
 
 Key files:
 
-| File | Purpose |
-|---|---|
-| `apps/backend/src/index.ts` | Express app setup, CORS, Better Auth handler, route mounting, service connectivity checks, `app.listen(process.env.PORT)`, graceful shutdown wiring. |
-| `apps/backend/src/redisManager.ts` | `RedisManager.connect`, `RedisManager.getInstance`, `RedisManager.sendAndAwait`. Pushes engine commands to `messages` and waits on a generated `clientId` pub/sub channel. |
-| `apps/backend/src/router/orderRouter.ts` | `POST /api/v1/order`, `DELETE /api/v1/order`, `GET /api/v1/order/open`. |
-| `apps/backend/src/router/depthRouter.ts` | `GET /api/v1/depth?symbol=...`, forwards `GET_DEPTH` to engine. |
-| `apps/backend/src/router/klineRouter.ts` | `GET /api/v1/klines`, queries Timescale `trades` with `time_bucket`. |
-| `apps/backend/src/router/tickerRouter.ts` | `GET /api/v1/tickers`, fetches Backpack tickers and filters/enriches by Prisma `market`. |
-| `apps/backend/src/router/openInterestRouter.ts` | `GET /api/v1/openInterest`, fetches Backpack open interest and filters by Prisma markets. |
-| `apps/backend/src/router/marketDataKlinesRouter.ts` | `GET /wapi/v1/marketDataKlines`, fetches Backpack klines and filters by Prisma markets. |
-| `apps/backend/src/router/tradesRouter.ts` | `GET /api/v1/trades`, currently returns `{}`. |
-| `apps/backend/src/lib/auth.ts` | Better Auth config, Prisma adapter, social providers, email/password, email OTP plugin. |
-| `apps/backend/src/middlewares/authMiddleware.ts` | Reads Better Auth session and sets `req.userId`; used by `/api/v1/todos`. |
-| `apps/backend/src/timescaleClient.ts` | `pg.Client` configured from `TIMESCALE_*`. |
-| `apps/backend/build.mjs` | esbuild bundle script for `src/index.ts`. |
+| File                                                | Purpose                                                                                                                                                                    |
+| --------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `apps/backend/src/index.ts`                         | Express app setup, CORS, Better Auth handler, route mounting, service connectivity checks, `app.listen(process.env.PORT)`, graceful shutdown wiring.                       |
+| `apps/backend/src/redisManager.ts`                  | `RedisManager.connect`, `RedisManager.getInstance`, `RedisManager.sendAndAwait`. Pushes engine commands to `messages` and waits on a generated `clientId` pub/sub channel. |
+| `apps/backend/src/router/orderRouter.ts`            | `POST /api/v1/order`, `DELETE /api/v1/order`, `GET /api/v1/order/open`.                                                                                                    |
+| `apps/backend/src/router/depthRouter.ts`            | `GET /api/v1/depth?symbol=...`, forwards `GET_DEPTH` to engine.                                                                                                            |
+| `apps/backend/src/router/klineRouter.ts`            | `GET /api/v1/klines`, queries Timescale `trades` with `time_bucket`.                                                                                                       |
+| `apps/backend/src/router/tickerRouter.ts`           | `GET /api/v1/tickers`, fetches Backpack tickers and filters/enriches by Prisma `market`.                                                                                   |
+| `apps/backend/src/router/openInterestRouter.ts`     | `GET /api/v1/openInterest`, fetches Backpack open interest and filters by Prisma markets.                                                                                  |
+| `apps/backend/src/router/marketDataKlinesRouter.ts` | `GET /wapi/v1/marketDataKlines`, fetches Backpack klines and filters by Prisma markets.                                                                                    |
+| `apps/backend/src/router/tradesRouter.ts`           | `GET /api/v1/trades`, currently returns `{}`.                                                                                                                              |
+| `apps/backend/src/lib/auth.ts`                      | Better Auth config, Prisma adapter, social providers, email/password, email OTP plugin.                                                                                    |
+| `apps/backend/src/middlewares/authMiddleware.ts`    | Reads Better Auth session and sets `req.userId`; used by `/api/v1/todos`.                                                                                                  |
+| `apps/backend/src/timescaleClient.ts`               | `pg.Client` configured from `TIMESCALE_*`.                                                                                                                                 |
+| `apps/backend/build.mjs`                            | esbuild bundle script for `src/index.ts`.                                                                                                                                  |
 
 REST routes mounted in `index.ts`:
 
-| Route prefix | Router | Current behavior |
-|---|---|---|
-| `/api/auth/{*any}` | Better Auth | Auth endpoints via `toNodeHandler(auth)`. |
-| `/health` | inline | Returns `{ "message": "healthy" }`. |
-| `/error` | inline | Returns HTTP 400 `{ "message": "error" }`. |
-| `/api/v1/order` | `orderRouter` | Place, cancel, and list open engine orders. |
-| `/api/v1/depth` | `depthRouter` | Request current orderbook depth from engine. |
-| `/api/v1/trades` | `tradesRouter` | Stubbed; returns `{}`. |
-| `/api/v1/klines` | `klineRouter` | Reads OHLCV-style rows from Timescale trades. |
-| `/api/v1/tickers` | `tickersRouter` | Proxies Backpack tickers filtered by local markets. |
-| `/api/v1/openInterest` | `openInterestRouter` | Proxies Backpack open interest filtered by local markets. |
+| Route prefix                | Router                   | Current behavior                                               |
+| --------------------------- | ------------------------ | -------------------------------------------------------------- |
+| `/api/auth/{*any}`          | Better Auth              | Auth endpoints via `toNodeHandler(auth)`.                      |
+| `/health`                   | inline                   | Returns `{ "message": "healthy" }`.                            |
+| `/error`                    | inline                   | Returns HTTP 400 `{ "message": "error" }`.                     |
+| `/api/v1/order`             | `orderRouter`            | Place, cancel, and list open engine orders.                    |
+| `/api/v1/depth`             | `depthRouter`            | Request current orderbook depth from engine.                   |
+| `/api/v1/trades`            | `tradesRouter`           | Stubbed; returns `{}`.                                         |
+| `/api/v1/klines`            | `klineRouter`            | Reads OHLCV-style rows from Timescale trades.                  |
+| `/api/v1/tickers`           | `tickersRouter`          | Proxies Backpack tickers filtered by local markets.            |
+| `/api/v1/openInterest`      | `openInterestRouter`     | Proxies Backpack open interest filtered by local markets.      |
 | `/wapi/v1/marketDataKlines` | `marketDataKlinesRouter` | Proxies Backpack market-data klines filtered by local markets. |
 
 Redis consumed/produced:
@@ -337,13 +337,13 @@ Responsibility boundary:
 
 Key files:
 
-| File | Purpose |
-|---|---|
-| `apps/engine/src/index.ts` | Connects Redis, creates `Engine`, calls `engine.init()`, then continuously `rPop`s Redis list `messages`. |
-| `apps/engine/src/trade/engine.ts` | `Engine` class: command processor, balances, snapshots, DB messages, WS publications. |
-| `apps/engine/src/trade/orderbook.ts` | `Orderbook` class: bids/asks arrays, matching, depth, open orders, cancellation. |
-| `apps/engine/src/redisManager.ts` | Engine Redis singleton for `pushMessage`, `publishMessage`, and `sendToApi`. |
-| `apps/engine/build.mjs` | esbuild bundle script. |
+| File                                 | Purpose                                                                                                   |
+| ------------------------------------ | --------------------------------------------------------------------------------------------------------- |
+| `apps/engine/src/index.ts`           | Connects Redis, creates `Engine`, calls `engine.init()`, then continuously `rPop`s Redis list `messages`. |
+| `apps/engine/src/trade/engine.ts`    | `Engine` class: command processor, balances, snapshots, DB messages, WS publications.                     |
+| `apps/engine/src/trade/orderbook.ts` | `Orderbook` class: bids/asks arrays, matching, depth, open orders, cancellation.                          |
+| `apps/engine/src/redisManager.ts`    | Engine Redis singleton for `pushMessage`, `publishMessage`, and `sendToApi`.                              |
+| `apps/engine/build.mjs`              | esbuild bundle script.                                                                                    |
 
 Important functions:
 
@@ -400,13 +400,13 @@ Responsibility boundary:
 
 Key files:
 
-| File | Purpose |
-|---|---|
-| `apps/websocket/src/index.ts` | Creates `WebSocketServer({ port: 3002 })` and registers new users. |
-| `apps/websocket/src/userManager.ts` | `UserManager` singleton, assigns UUIDs, stores `User` instances, cleans up on close. |
-| `apps/websocket/src/user.ts` | Parses client `SUBSCRIBE` and `UNSUBSCRIBE` messages and emits server messages. |
+| File                                        | Purpose                                                                                                 |
+| ------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| `apps/websocket/src/index.ts`               | Creates `WebSocketServer({ port: 3002 })` and registers new users.                                      |
+| `apps/websocket/src/userManager.ts`         | `UserManager` singleton, assigns UUIDs, stores `User` instances, cleans up on close.                    |
+| `apps/websocket/src/user.ts`                | Parses client `SUBSCRIBE` and `UNSUBSCRIBE` messages and emits server messages.                         |
 | `apps/websocket/src/subscriptionManager.ts` | Tracks user-to-stream and stream-to-user maps; subscribes/unsubscribes Redis channels; relays messages. |
-| `apps/websocket/build.mjs` | esbuild bundle script. |
+| `apps/websocket/build.mjs`                  | esbuild bundle script.                                                                                  |
 
 Important functions:
 
@@ -458,13 +458,13 @@ Responsibility boundary:
 
 Key files:
 
-| File | Purpose |
-|---|---|
-| `apps/db-processor/src/index.ts` | Connects Timescale and Redis, starts cron refreshes, continuously `rPop`s `db_processor`, inserts `TRADE_ADDED` rows. |
-| `apps/db-processor/src/timescaleClient.ts` | `pg.Client` from `TIMESCALE_*`. |
-| `apps/db-processor/src/seedTimescale.ts` | Creates `trades` hypertable, market-time index, and `klines_1m`, `klines_1h`, `klines_1w` materialized views. |
-| `apps/db-processor/src/cron.ts` | Refreshes materialized views on intervals. |
-| `apps/db-processor/build.mjs` | esbuild bundle script. |
+| File                                       | Purpose                                                                                                               |
+| ------------------------------------------ | --------------------------------------------------------------------------------------------------------------------- |
+| `apps/db-processor/src/index.ts`           | Connects Timescale and Redis, starts cron refreshes, continuously `rPop`s `db_processor`, inserts `TRADE_ADDED` rows. |
+| `apps/db-processor/src/timescaleClient.ts` | `pg.Client` from `TIMESCALE_*`.                                                                                       |
+| `apps/db-processor/src/seedTimescale.ts`   | Creates `trades` hypertable, market-time index, and `klines_1m`, `klines_1h`, `klines_1w` materialized views.         |
+| `apps/db-processor/src/cron.ts`            | Refreshes materialized views on intervals.                                                                            |
+| `apps/db-processor/build.mjs`              | esbuild bundle script.                                                                                                |
 
 Redis consumed/produced:
 
@@ -517,25 +517,25 @@ Responsibility boundary:
 
 Key file:
 
-| File | Purpose |
-|---|---|
+| File                             | Purpose                                                                                                                                      |
+| -------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
 | `apps/market-maker/src/index.ts` | Full market-making strategy, ticker refresh, target price ramping, depth/open-order fetches, order placement/cancellation, per-market loops. |
-| `apps/market-maker/build.mjs` | esbuild bundle script. |
+| `apps/market-maker/build.mjs`    | esbuild bundle script.                                                                                                                       |
 
 Strategy constants in `index.ts`:
 
-| Constant | Value | Meaning |
-|---|---:|---|
-| `TICK_MS` | `200` | Base per-market loop delay. |
-| `REAL_PRICE_REFRESH_MS` | `60_000` | Refresh cadence for upstream/reference prices. |
-| `RAMP_WINDOW_MS` | `60_000` | Smooth target price transitions over one minute. |
-| `LADDER_LEVELS` | `8` | Number of maker levels on each side. |
-| `LADDER_SPREAD_BPS` | `25` | Total spread basis points around target. |
-| `STALE_BPS` | `60` | Cancel orders too far from target. |
-| `TAKER_MAX_QTY` | `0.5` | Maximum taker order quantity. |
-| `TAKER_MIN_QTY` | `0.05` | Minimum taker order quantity. |
-| `MAKER_QTY` | `1` | Base maker quantity. |
-| `DEFAULT_PRICE` | `100` | Fallback target when no external price is available. |
+| Constant                |    Value | Meaning                                              |
+| ----------------------- | -------: | ---------------------------------------------------- |
+| `TICK_MS`               |    `200` | Base per-market loop delay.                          |
+| `REAL_PRICE_REFRESH_MS` | `60_000` | Refresh cadence for upstream/reference prices.       |
+| `RAMP_WINDOW_MS`        | `60_000` | Smooth target price transitions over one minute.     |
+| `LADDER_LEVELS`         |      `8` | Number of maker levels on each side.                 |
+| `LADDER_SPREAD_BPS`     |     `25` | Total spread basis points around target.             |
+| `STALE_BPS`             |     `60` | Cancel orders too far from target.                   |
+| `TAKER_MAX_QTY`         |    `0.5` | Maximum taker order quantity.                        |
+| `TAKER_MIN_QTY`         |   `0.05` | Minimum taker order quantity.                        |
+| `MAKER_QTY`             |      `1` | Base maker quantity.                                 |
+| `DEFAULT_PRICE`         |    `100` | Fallback target when no external price is available. |
 
 Important functions:
 
@@ -580,27 +580,27 @@ Responsibility boundary:
 
 Key files:
 
-| File | Purpose |
-|---|---|
-| `apps/web/app/layout.tsx` | Root layout, local Geist fonts, global CSS, `Providers`, `Navbar`. |
-| `apps/web/app/page.tsx` | Home page that renders `Markets`. |
-| `apps/web/app/markets/page.tsx` | Markets page that renders `Markets`. |
-| `apps/web/app/trade/[market]/page.tsx` | Auth-gated trading page with `MarketBar`, `TradeView`, `Depth`, `BottomDashboardMock`, and `SwapUI`. |
-| `apps/web/app/components/Markets.tsx` | Market table, category filter, Backpack coin icons, open interest, sparkline data. |
-| `apps/web/app/components/MarketBar.tsx` | Header for selected market, ticker display, trade stream subscription for latest price. |
-| `apps/web/app/components/TradeView.tsx` | Candle chart container, interval controls, historical kline fetch, live trade updates. |
-| `apps/web/app/components/SwapUI.tsx` | Buy/sell order form, limit/market tab UI, `createOrder` call. |
-| `apps/web/app/components/depth/Depth.tsx` | Initial depth fetch, depth/trade/ticker subscriptions, book update application. |
-| `apps/web/app/components/depth/AskTable.tsx` | Ask side rendering with cumulative total shading. |
-| `apps/web/app/components/depth/BidTable.tsx` | Bid side rendering with cumulative total shading. |
-| `apps/web/app/utils/httpClient.ts` | REST client helpers for tickers, depth, trades, klines, open interest, marketDataKlines, and order creation. |
-| `apps/web/app/utils/SignalingManager.ts` | Singleton WebSocket manager, reconnect logic, subscription reference counts, callback registry. |
-| `apps/web/app/utils/ChartManager.ts` | `lightweight-charts` wrapper for candlesticks, volume, live trade updates, and interval bucket changes. |
-| `apps/web/app/utils/types.ts` | Frontend market-data interfaces. |
-| `apps/web/lib/auth.ts` | Better Auth React client with email OTP plugin. |
-| `apps/web/lib/util.ts` | `getBackendUrl()`, currently hard-coded to `https://api.exchange.nagmani.site`. |
-| `apps/web/components/*` | Auth pages, navbar, user menu, providers, social auth, OTP dialog, theme toggle. |
-| `apps/web/next.config.js` | Next config; transpiles `@repo/ui`, emits standalone output. |
+| File                                         | Purpose                                                                                                      |
+| -------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| `apps/web/app/layout.tsx`                    | Root layout, local Geist fonts, global CSS, `Providers`, `Navbar`.                                           |
+| `apps/web/app/page.tsx`                      | Home page that renders `Markets`.                                                                            |
+| `apps/web/app/markets/page.tsx`              | Markets page that renders `Markets`.                                                                         |
+| `apps/web/app/trade/[market]/page.tsx`       | Auth-gated trading page with `MarketBar`, `TradeView`, `Depth`, `BottomDashboardMock`, and `SwapUI`.         |
+| `apps/web/app/components/Markets.tsx`        | Market table, category filter, Backpack coin icons, open interest, sparkline data.                           |
+| `apps/web/app/components/MarketBar.tsx`      | Header for selected market, ticker display, trade stream subscription for latest price.                      |
+| `apps/web/app/components/TradeView.tsx`      | Candle chart container, interval controls, historical kline fetch, live trade updates.                       |
+| `apps/web/app/components/SwapUI.tsx`         | Buy/sell order form, limit/market tab UI, `createOrder` call.                                                |
+| `apps/web/app/components/depth/Depth.tsx`    | Initial depth fetch, depth/trade/ticker subscriptions, book update application.                              |
+| `apps/web/app/components/depth/AskTable.tsx` | Ask side rendering with cumulative total shading.                                                            |
+| `apps/web/app/components/depth/BidTable.tsx` | Bid side rendering with cumulative total shading.                                                            |
+| `apps/web/app/utils/httpClient.ts`           | REST client helpers for tickers, depth, trades, klines, open interest, marketDataKlines, and order creation. |
+| `apps/web/app/utils/SignalingManager.ts`     | Singleton WebSocket manager, reconnect logic, subscription reference counts, callback registry.              |
+| `apps/web/app/utils/ChartManager.ts`         | `lightweight-charts` wrapper for candlesticks, volume, live trade updates, and interval bucket changes.      |
+| `apps/web/app/utils/types.ts`                | Frontend market-data interfaces.                                                                             |
+| `apps/web/lib/auth.ts`                       | Better Auth React client with email OTP plugin.                                                              |
+| `apps/web/lib/util.ts`                       | `getBackendUrl()`, derived from `NEXT_PUBLIC_BACKEND_URL` or `NEXT_PUBLIC_EXCHANGE_API_URL`.                 |
+| `apps/web/components/*`                      | Auth pages, navbar, user menu, providers, social auth, OTP dialog, theme toggle.                             |
+| `apps/web/next.config.js`                    | Next config; transpiles `@repo/ui`, emits standalone output.                                                 |
 
 Frontend data flow:
 
@@ -623,13 +623,13 @@ Start and Docker:
 - Build: `cd apps/web && pnpm build`.
 - Start built output: `cd apps/web && pnpm start`.
 - Dockerfile: `docker/web/Dockerfile` prunes for `web`, accepts build args `NEXT_PUBLIC_EXCHANGE_API_URL` and `NEXT_PUBLIC_EXCHANGE_WS_URL`, builds Next standalone output, creates a non-root `nextjs` user, and starts `node apps/web/server.js`.
-- Deploy compose maps `"4000:3000"` and builds with `NEXT_PUBLIC_EXCHANGE_API_URL=https://api.exchange.nagmani.site/api/v1` and `NEXT_PUBLIC_EXCHANGE_WS_URL=wss://ws.exchange.nagmani.site`.
+- Deploy compose maps `"4000:3000"` and builds with env-configured `NEXT_PUBLIC_EXCHANGE_API_URL` and `NEXT_PUBLIC_EXCHANGE_WS_URL` values, defaulting to the `shikhar.site` subdomains in the sample config.
 
 Current implementation notes:
 
 - The UI has `type: "limit" | "market"` state in `SwapUI`, but `placeOrder()` always sends the same payload shape. Market mode disables the price input, so it can submit an empty `price`, but the engine still converts `price` with `Number(price)` and does not have market-order semantics.
 - `getTrades(market)` calls `/api/v1/trades?symbol=${market}`, but the backend route destructures `market` and returns `{}` today.
-- `getBackendUrl()` ignores `NEXT_PUBLIC_BACKEND_URL` and returns the deployed API URL.
+- `getBackendUrl()` prefers `NEXT_PUBLIC_BACKEND_URL` and otherwise derives the backend origin from `NEXT_PUBLIC_EXCHANGE_API_URL`.
 - `apps/web/README.md` is default Next.js boilerplate.
 - `apps/web/public/*.svg`, `favicon.ico`, and `app/fonts/*.woff` are static boilerplate/assets.
 
@@ -649,14 +649,14 @@ Responsibility boundary:
 
 Key files:
 
-| File | Purpose |
-|---|---|
-| `apps/integration-test/src/index.test.ts` | Vitest tests for `/health` and `/error`. |
-| `apps/integration-test/src/lib/utils.ts` | Axios wrapper that converts failed responses into resolved `error.response`. |
-| `apps/integration-test/src/scripts/run-integration.sh` | Local integration script using app `.env` files. |
-| `apps/integration-test/src/scripts/run-integration-ci.sh` | CI integration script with inline `PORT=3001` and `DATABASE_URL`. |
-| `apps/integration-test/src/scripts/wait-for-it.sh` | TCP wait helper script. |
-| `docker/compose-files/docker-compose-integration-test.yml` | Starts only Postgres for integration tests. |
+| File                                                       | Purpose                                                                      |
+| ---------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| `apps/integration-test/src/index.test.ts`                  | Vitest tests for `/health` and `/error`.                                     |
+| `apps/integration-test/src/lib/utils.ts`                   | Axios wrapper that converts failed responses into resolved `error.response`. |
+| `apps/integration-test/src/scripts/run-integration.sh`     | Local integration script using app `.env` files.                             |
+| `apps/integration-test/src/scripts/run-integration-ci.sh`  | CI integration script with inline `PORT=3001` and `DATABASE_URL`.            |
+| `apps/integration-test/src/scripts/wait-for-it.sh`         | TCP wait helper script.                                                      |
+| `docker/compose-files/docker-compose-integration-test.yml` | Starts only Postgres for integration tests.                                  |
 
 Environment variables:
 
@@ -676,26 +676,26 @@ Start:
 
 Exports from `package.json`:
 
-| Export | File | Purpose |
-|---|---|---|
-| `@repo/common/zodTypes` | `src/zodTypes.ts` | Auth form schemas and inferred types. |
-| `@repo/common/engineMessages` | `src/engineMessages.ts` | `MessageToEngine`, `MessageFromEngine`. |
-| `@repo/common/dbMessages` | `src/dbMessages.ts` | `DbMessage`. |
-| `@repo/common/wsMessages` | `src/wsMessages.ts` | `IncomingMessage`, `WsMessage`, `DepthUpdateMessage`, `TradeAddedMessage`, `TickerUpdateMessage`. |
-| `@repo/common/consts` | `src/consts.ts` | Shared string constants like `CREATE_ORDER`, `CANCEL_ORDER`, `GET_DEPTH`, `TRADE_ADDED`, `ORDER_UPDATE`, `BASE_CURRENCY`. |
-| `@repo/common/orderbook` | `src/orderbook.ts` | `Order` and `Fill` interfaces. |
+| Export                        | File                    | Purpose                                                                                                                   |
+| ----------------------------- | ----------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| `@repo/common/zodTypes`       | `src/zodTypes.ts`       | Auth form schemas and inferred types.                                                                                     |
+| `@repo/common/engineMessages` | `src/engineMessages.ts` | `MessageToEngine`, `MessageFromEngine`.                                                                                   |
+| `@repo/common/dbMessages`     | `src/dbMessages.ts`     | `DbMessage`.                                                                                                              |
+| `@repo/common/wsMessages`     | `src/wsMessages.ts`     | `IncomingMessage`, `WsMessage`, `DepthUpdateMessage`, `TradeAddedMessage`, `TickerUpdateMessage`.                         |
+| `@repo/common/consts`         | `src/consts.ts`         | Shared string constants like `CREATE_ORDER`, `CANCEL_ORDER`, `GET_DEPTH`, `TRADE_ADDED`, `ORDER_UPDATE`, `BASE_CURRENCY`. |
+| `@repo/common/orderbook`      | `src/orderbook.ts`      | `Order` and `Fill` interfaces.                                                                                            |
 
 Key constants:
 
 ```ts
-CREATE_ORDER = "CREATE_ORDER"
-CANCEL_ORDER = "CANCEL_ORDER"
-ON_RAMP = "ON_RAMP"
-GET_OPEN_ORDERS = "GET_OPEN_ORDERS"
-GET_DEPTH = "GET_DEPTH"
-TRADE_ADDED = "TRADE_ADDED"
-ORDER_UPDATE = "ORDER_UPDATE"
-BASE_CURRENCY = "USDC"
+CREATE_ORDER = "CREATE_ORDER";
+CANCEL_ORDER = "CANCEL_ORDER";
+ON_RAMP = "ON_RAMP";
+GET_OPEN_ORDERS = "GET_OPEN_ORDERS";
+GET_DEPTH = "GET_DEPTH";
+TRADE_ADDED = "TRADE_ADDED";
+ORDER_UPDATE = "ORDER_UPDATE";
+BASE_CURRENCY = "USDC";
 ```
 
 Apps depending on it:
@@ -717,8 +717,8 @@ Why it is shared:
 
 Export:
 
-| Export | File | Purpose |
-|---|---|---|
+| Export                  | File           | Purpose                                                                        |
+| ----------------------- | -------------- | ------------------------------------------------------------------------------ |
 | `@repo/database/client` | `src/index.ts` | Creates `PrismaClient` with `PrismaPg` adapter and `process.env.DATABASE_URL`. |
 
 Prisma models:
@@ -742,13 +742,13 @@ Enums:
 
 Key files:
 
-| File | Purpose |
-|---|---|
-| `packages/database/prisma/schema.prisma` | Canonical Prisma schema. |
+| File                                                  | Purpose                                                                                                    |
+| ----------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| `packages/database/prisma/schema.prisma`              | Canonical Prisma schema.                                                                                   |
 | `packages/database/prisma/migrations/*/migration.sql` | Database migrations for auth, verification uniqueness, markets, balances, onramp transactions, and orders. |
-| `packages/database/src/index.ts` | Prisma client export. |
-| `packages/database/src/seed.ts` | Seeds 30 active markets: 15 base assets, each with spot and perpetual `USDC` symbols. |
-| `packages/database/prisma.config.ts` | Prisma config and migration seed hook. |
+| `packages/database/src/index.ts`                      | Prisma client export.                                                                                      |
+| `packages/database/src/seed.ts`                       | Seeds 30 active markets: 15 base assets, each with spot and perpetual `USDC` symbols.                      |
+| `packages/database/prisma.config.ts`                  | Prisma config and migration seed hook.                                                                     |
 
 Apps depending on it:
 
@@ -768,20 +768,20 @@ Why it is shared:
 
 Exports:
 
-| Export | File | Purpose |
-|---|---|---|
-| `@repo/email/email` | `src/index.ts` | `initEmail`, `sendEmail`, `EmailConfig`. |
+| Export                   | File                       | Purpose                                      |
+| ------------------------ | -------------------------- | -------------------------------------------- |
+| `@repo/email/email`      | `src/index.ts`             | `initEmail`, `sendEmail`, `EmailConfig`.     |
 | `@repo/email/exchange/*` | `src/emailTemplates/*.tsx` | React email templates such as `OtpTemplate`. |
 
 Key files:
 
-| File | Purpose |
-|---|---|
-| `packages/email/src/index.ts` | Initializes Resend or Nodemailer and dispatches `sendEmail`. |
-| `packages/email/src/sendViaResend.ts` | Sends via Resend. |
-| `packages/email/src/sendViaNodemailer.ts` | Renders React email to HTML and sends through SMTP. |
-| `packages/email/src/resend/types.ts` | `ResendEmailOptions`, `NodemailerInput`. |
-| `packages/email/src/emailTemplates/OtpTemplate.tsx` | OTP email template. |
+| File                                                | Purpose                                                      |
+| --------------------------------------------------- | ------------------------------------------------------------ |
+| `packages/email/src/index.ts`                       | Initializes Resend or Nodemailer and dispatches `sendEmail`. |
+| `packages/email/src/sendViaResend.ts`               | Sends via Resend.                                            |
+| `packages/email/src/sendViaNodemailer.ts`           | Renders React email to HTML and sends through SMTP.          |
+| `packages/email/src/resend/types.ts`                | `ResendEmailOptions`, `NodemailerInput`.                     |
+| `packages/email/src/emailTemplates/OtpTemplate.tsx` | OTP email template.                                          |
 
 Apps depending on it:
 
@@ -800,13 +800,13 @@ Current implementation note: `OtpTemplate` copy says `Codeforces`, not `Exchange
 
 Exports:
 
-| Export | File | Purpose |
-|---|---|---|
-| `@repo/ui/globals.css` | `src/styles/globals.css` | Tailwind v4 globals, design tokens, auth theme variables. |
-| `@repo/ui/postcss.config` | `postcss.config.mjs` | Shared Tailwind PostCSS config. |
-| `@repo/ui/lib/*` | `src/lib/*.ts` | `cn`, `toast`. |
-| `@repo/ui/components/*` | `src/components/*.tsx` | UI primitives. |
-| `@repo/ui/hooks/*` | `src/hooks/*.ts` | Hook export path exists; currently only `.gitkeep`. |
+| Export                    | File                     | Purpose                                                   |
+| ------------------------- | ------------------------ | --------------------------------------------------------- |
+| `@repo/ui/globals.css`    | `src/styles/globals.css` | Tailwind v4 globals, design tokens, auth theme variables. |
+| `@repo/ui/postcss.config` | `postcss.config.mjs`     | Shared Tailwind PostCSS config.                           |
+| `@repo/ui/lib/*`          | `src/lib/*.ts`           | `cn`, `toast`.                                            |
+| `@repo/ui/components/*`   | `src/components/*.tsx`   | UI primitives.                                            |
+| `@repo/ui/hooks/*`        | `src/hooks/*.ts`         | Hook export path exists; currently only `.gitkeep`.       |
 
 Components:
 
@@ -834,11 +834,11 @@ Why it is shared:
 
 Exports:
 
-| Export | File | Purpose |
-|---|---|---|
-| `@repo/eslint-config/base` | `base.js` | JS recommended, TypeScript recommended, Prettier, Turbo env-var rule, only-warn plugin, ignores `dist/**`. |
-| `@repo/eslint-config/next-js` | `next.js` | Base config plus Next, React, React Hooks, browser/serviceworker globals, `.next` ignores. |
-| `@repo/eslint-config/react-internal` | `react-internal.js` | Base config plus React and React Hooks for internal React packages. |
+| Export                               | File                | Purpose                                                                                                    |
+| ------------------------------------ | ------------------- | ---------------------------------------------------------------------------------------------------------- |
+| `@repo/eslint-config/base`           | `base.js`           | JS recommended, TypeScript recommended, Prettier, Turbo env-var rule, only-warn plugin, ignores `dist/**`. |
+| `@repo/eslint-config/next-js`        | `next.js`           | Base config plus Next, React, React Hooks, browser/serviceworker globals, `.next` ignores.                 |
+| `@repo/eslint-config/react-internal` | `react-internal.js` | Base config plus React and React Hooks for internal React packages.                                        |
 
 Apps/packages depending on it:
 
@@ -856,11 +856,11 @@ Why it is shared:
 
 Files:
 
-| File | Purpose |
-|---|---|
-| `base.json` | Strict ES2022 NodeNext-oriented base with declarations, `noUncheckedIndexedAccess`, `isolatedModules`, DOM libs, and `skipLibCheck`. |
-| `nextjs.json` | Extends base for Next: `module` ESNext, Bundler resolution, `allowJs`, `jsx: preserve`, `noEmit`, Next plugin. |
-| `react-library.json` | Extends base and sets `jsx: react-jsx`. |
+| File                 | Purpose                                                                                                                              |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| `base.json`          | Strict ES2022 NodeNext-oriented base with declarations, `noUncheckedIndexedAccess`, `isolatedModules`, DOM libs, and `skipLibCheck`. |
+| `nextjs.json`        | Extends base for Next: `module` ESNext, Bundler resolution, `allowJs`, `jsx: preserve`, `noEmit`, Next plugin.                       |
+| `react-library.json` | Extends base and sets `jsx: react-jsx`.                                                                                              |
 
 Apps/packages depending on it:
 
@@ -1165,7 +1165,11 @@ Engine -> API reply types from `MessageFromEngine`:
 type MessageFromEngine =
   | {
       type: "DEPTH";
-      payload: { market: string; bids: [string, string][]; asks: [string, string][] };
+      payload: {
+        market: string;
+        bids: [string, string][];
+        asks: [string, string][];
+      };
     }
   | {
       type: "ORDER_PLACED";
@@ -1205,7 +1209,7 @@ Engine -> DB queue type from `DbMessage`:
     quoteQuantity: string;
     timestamp: number;
     market: string;
-  };
+  }
 }
 ```
 
@@ -1266,9 +1270,7 @@ const markets = await prisma.market.findMany({
   select: { symbol: true },
 });
 
-this.orderbooks = markets.map(
-  (m) => new Orderbook(m.symbol, [], [], 0, 0),
-);
+this.orderbooks = markets.map((m) => new Orderbook(m.symbol, [], [], 0, 0));
 ```
 
 When processing commands, the engine routes by market symbol:
@@ -1288,20 +1290,20 @@ Redis is used for two patterns:
 
 ### Queue names
 
-| Name | Type | Producer | Consumer | Purpose |
-|---|---|---|---|---|
-| `messages` | Redis list | Backend `RedisManager.sendAndAwait` | Engine `src/index.ts` | API -> Engine commands with `{ clientId, message }`. |
-| `db_processor` | Redis list | Engine `RedisManager.pushMessage` | DB Processor `src/index.ts` | Engine -> persistence worker messages. |
+| Name           | Type       | Producer                            | Consumer                    | Purpose                                              |
+| -------------- | ---------- | ----------------------------------- | --------------------------- | ---------------------------------------------------- |
+| `messages`     | Redis list | Backend `RedisManager.sendAndAwait` | Engine `src/index.ts`       | API -> Engine commands with `{ clientId, message }`. |
+| `db_processor` | Redis list | Engine `RedisManager.pushMessage`   | DB Processor `src/index.ts` | Engine -> persistence worker messages.               |
 
 The code uses `lPush` to enqueue and `rPop` to dequeue, giving FIFO behavior for list usage.
 
 ### Pub/sub channels
 
-| Channel | Publisher | Subscriber | Purpose |
-|---|---|---|---|
-| `<clientId UUID>` | Engine | Backend | One-shot HTTP response to the exact API request that enqueued a command. |
-| `depth@${market}` | Engine | WebSocket server | Incremental orderbook/depth updates. |
-| `trade@${market}` | Engine | WebSocket server | Trade prints from fills. |
+| Channel            | Publisher      | Subscriber                        | Purpose                                                                     |
+| ------------------ | -------------- | --------------------------------- | --------------------------------------------------------------------------- |
+| `<clientId UUID>`  | Engine         | Backend                           | One-shot HTTP response to the exact API request that enqueued a command.    |
+| `depth@${market}`  | Engine         | WebSocket server                  | Incremental orderbook/depth updates.                                        |
+| `trade@${market}`  | Engine         | WebSocket server                  | Trade prints from fills.                                                    |
 | `ticker@${market}` | None currently | WebSocket server if frontend asks | Frontend subscription exists, but no backend/engine publisher exists today. |
 
 ### `messages` data format
@@ -1316,11 +1318,44 @@ The code uses `lPush` to enqueue and `rPop` to dequeue, giving FIFO behavior for
 `MessageToEngine` variants:
 
 ```ts
-{ type: "CREATE_ORDER"; data: { market: string; price: string; quantity: string; side: "buy" | "sell"; userId: string } }
-{ type: "CANCEL_ORDER"; data: { orderId: string; market: string } }
-{ type: "ON_RAMP"; data: { amount: string; userId: string; txnId: string } }
-{ type: "GET_DEPTH"; data: { market: string } }
-{ type: "GET_OPEN_ORDERS"; data: { userId: string; market: string } }
+{
+  type: "CREATE_ORDER";
+  data: {
+    market: string;
+    price: string;
+    quantity: string;
+    side: "buy" | "sell";
+    userId: string;
+  }
+}
+{
+  type: "CANCEL_ORDER";
+  data: {
+    orderId: string;
+    market: string;
+  }
+}
+{
+  type: "ON_RAMP";
+  data: {
+    amount: string;
+    userId: string;
+    txnId: string;
+  }
+}
+{
+  type: "GET_DEPTH";
+  data: {
+    market: string;
+  }
+}
+{
+  type: "GET_OPEN_ORDERS";
+  data: {
+    userId: string;
+    market: string;
+  }
+}
 ```
 
 ### `db_processor` data format
@@ -1578,16 +1613,16 @@ Used by:
 
 Prisma models:
 
-| Model | Purpose |
-|---|---|
-| `User` | Better Auth user plus relations to balances, onramp transactions, and orders. |
-| `Session` | Better Auth sessions. |
-| `Account` | Better Auth account/provider credentials. |
-| `Verification` | Better Auth verification/OTP records; `identifier` is unique. |
-| `Market` | Exchange markets, including `symbol`, `baseCurrency`, `quoteCurrency`, `category`, `minOrderSize`, `tickSize`, `isActive`. |
-| `UserBalance` | Relational balance table; currently not used by engine balance mutation. |
-| `OnrampTransaction` | Onramp transaction model; engine has `ON_RAMP` balance mutation but no API route in current code. |
-| `Order` | Relational order model; currently not written by `db-processor` despite engine `ORDER_UPDATE` messages. |
+| Model               | Purpose                                                                                                                    |
+| ------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| `User`              | Better Auth user plus relations to balances, onramp transactions, and orders.                                              |
+| `Session`           | Better Auth sessions.                                                                                                      |
+| `Account`           | Better Auth account/provider credentials.                                                                                  |
+| `Verification`      | Better Auth verification/OTP records; `identifier` is unique.                                                              |
+| `Market`            | Exchange markets, including `symbol`, `baseCurrency`, `quoteCurrency`, `category`, `minOrderSize`, `tickSize`, `isActive`. |
+| `UserBalance`       | Relational balance table; currently not used by engine balance mutation.                                                   |
+| `OnrampTransaction` | Onramp transaction model; engine has `ON_RAMP` balance mutation but no API route in current code.                          |
+| `Order`             | Relational order model; currently not written by `db-processor` despite engine `ORDER_UPDATE` messages.                    |
 
 Seeded markets from `packages/database/src/seed.ts`:
 
@@ -1672,7 +1707,7 @@ with:
 The frontend calls:
 
 ```ts
-getKlines(market, interval, startTime, endTime)
+getKlines(market, interval, startTime, endTime);
 ```
 
 which sends:
@@ -1701,25 +1736,25 @@ Supported backend intervals:
 
 All service Dockerfiles use Turborepo pruning to reduce build context for a specific app.
 
-| Dockerfile | What it does |
-|---|---|
-| `docker/backend/Dockerfile` | Uses Node `24.13.1`; prunes `backend`; installs deps; runs Prisma generate; builds `backend`; deploys production deps; runs as non-root `expressjs`; exposes `3001`; starts `node dist/index.js`. |
-| `docker/engine/Dockerfile` | Prunes `engine`; installs deps; runs Prisma generate; builds `engine`; deploys production deps; starts `node dist/index.js`. |
-| `docker/db-processor/Dockerfile` | Prunes `db-processor`; installs deps; builds; deploys production deps; runs as non-root `db-processor`; starts `node dist/index.js`. |
-| `docker/websocket/Dockerfile` | Prunes `websocket`; installs deps; builds; deploys production deps; exposes `3002`; starts `node dist/index.js`. |
-| `docker/market-maker/Dockerfile` | Prunes `market-maker`; installs deps; builds; deploys production deps; starts `node dist/index.js`. |
-| `docker/web/Dockerfile` | Prunes `web`; accepts public API/WS build args; builds Next standalone output; runs as non-root `nextjs`; starts `node apps/web/server.js`. |
+| Dockerfile                       | What it does                                                                                                                                                                                      |
+| -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `docker/backend/Dockerfile`      | Uses Node `24.13.1`; prunes `backend`; installs deps; runs Prisma generate; builds `backend`; deploys production deps; runs as non-root `expressjs`; exposes `3001`; starts `node dist/index.js`. |
+| `docker/engine/Dockerfile`       | Prunes `engine`; installs deps; runs Prisma generate; builds `engine`; deploys production deps; starts `node dist/index.js`.                                                                      |
+| `docker/db-processor/Dockerfile` | Prunes `db-processor`; installs deps; builds; deploys production deps; runs as non-root `db-processor`; starts `node dist/index.js`.                                                              |
+| `docker/websocket/Dockerfile`    | Prunes `websocket`; installs deps; builds; deploys production deps; exposes `3002`; starts `node dist/index.js`.                                                                                  |
+| `docker/market-maker/Dockerfile` | Prunes `market-maker`; installs deps; builds; deploys production deps; starts `node dist/index.js`.                                                                                               |
+| `docker/web/Dockerfile`          | Prunes `web`; accepts public API/WS build args; builds Next standalone output; runs as non-root `nextjs`; starts `node apps/web/server.js`.                                                       |
 
 ### Compose files
 
 `docker/compose-files/docker-compose-auxilary-services.yml` starts local supporting infrastructure:
 
-| Service | Image | Ports | Purpose |
-|---|---|---|---|
-| `database` | `postgres` | `5432:5432` | Main Postgres database. |
-| `redis` | `redis` | `6379:6379` | Queue and pub/sub. |
-| `mailhog` | `mailhog/mailhog` | `1025:1025`, `8025:8025` | Local SMTP and email UI. |
-| `timescaledb` | `timescale/timescaledb:latest-pg12` | `5433:5432` | Trade time-series database. |
+| Service       | Image                               | Ports                    | Purpose                     |
+| ------------- | ----------------------------------- | ------------------------ | --------------------------- |
+| `database`    | `postgres`                          | `5432:5432`              | Main Postgres database.     |
+| `redis`       | `redis`                             | `6379:6379`              | Queue and pub/sub.          |
+| `mailhog`     | `mailhog/mailhog`                   | `1025:1025`, `8025:8025` | Local SMTP and email UI.    |
+| `timescaledb` | `timescale/timescaledb:latest-pg12` | `5433:5432`              | Trade time-series database. |
 
 `docker/compose-files/docker-compose-integration-test.yml` starts only Postgres for integration tests.
 
@@ -1737,14 +1772,14 @@ All service Dockerfiles use Turborepo pruning to reduce build context for a spec
 
 Deployment ports:
 
-| Service | Compose port mapping |
-|---|---|
-| `database` | `5432:5432` |
-| `redis` | `6379:6379` |
-| `timescaledb` | `5433:5432` |
-| `backend` | `4001:4001` |
-| `websocket` | `4002:3002` |
-| `web` | `4000:3000` |
+| Service       | Compose port mapping |
+| ------------- | -------------------- |
+| `database`    | `5432:5432`          |
+| `redis`       | `6379:6379`          |
+| `timescaledb` | `5433:5432`          |
+| `backend`     | `4001:4001`          |
+| `websocket`   | `4002:3002`          |
+| `web`         | `4000:3000`          |
 
 Dockerfile exposed ports:
 
@@ -1793,37 +1828,39 @@ Open:
 
 ## 12. Environment Variables — Full Reference Table
 
-| Variable | Used By | What It Does | Example |
-|---|---|---|---|
-| `PORT` | `apps/backend`; integration scripts | Port for Express `app.listen`. | `3001` |
-| `REDIS_URL` | `apps/backend`, `apps/engine`, `apps/websocket`, `apps/db-processor` | Redis connection URL for queues and pub/sub. | `redis://localhost:6379` |
-| `DATABASE_URL` | `packages/database`, `apps/backend`, `apps/engine`, `apps/db-processor/src/seedTimescale.ts`, CI/CD | Postgres URL for Prisma. | `postgresql://postgres:nagmani@localhost:5432/postgres` |
-| `TIMESCALE_USER` | `apps/backend`, `apps/db-processor` | TimescaleDB user for `pg.Client`. | `exchange` |
-| `TIMESCALE_HOST` | `apps/backend`, `apps/db-processor` | TimescaleDB host. | `localhost` |
-| `TIMESCALE_DATABASE` | `apps/backend`, `apps/db-processor` | TimescaleDB database name. | `exchange` |
-| `TIMESCALE_PASSWORD` | `apps/backend`, `apps/db-processor` | TimescaleDB password. | `nagmani` |
-| `TIMESCALE_PORT` | `apps/backend`, `apps/db-processor` | TimescaleDB port; defaults to `5433` in code. | `5433` |
-| `FRONTEND_URL_DEPLOYED` | `apps/backend` | Allowed CORS/trusted origin for deployed frontend. | `https://exchange.nagmani.site` |
-| `BETTER_AUTH_SECRET` | Better Auth runtime through `apps/backend` | Secret used by Better Auth. | `replace-with-secret` |
-| `BETTER_AUTH_URL` | Better Auth runtime through `apps/backend` | Public backend auth URL. | `http://localhost:3001` |
-| `GITHUB_CLIENT_ID` | `apps/backend/src/lib/auth.ts` | GitHub OAuth client ID. | `Iv1.xxxxx` |
-| `GITHUB_CLIENT_SECRET` | `apps/backend/src/lib/auth.ts` | GitHub OAuth client secret. | `github-secret` |
-| `GOOGLE_CLIENT_ID` | `apps/backend/src/lib/auth.ts` | Google OAuth client ID. | `google-client-id.apps.googleusercontent.com` |
-| `GOOGLE_CLIENT_SECRET` | `apps/backend/src/lib/auth.ts` | Google OAuth client secret. | `google-secret` |
-| `RESEND_API_KEY` | `apps/backend`, `packages/email` | Enables Resend email transport. | `re_xxxxx` |
-| `SMTP_HOST` | `apps/backend`, `packages/email` | Enables SMTP email transport when Resend is not set. | `localhost` |
-| `SMTP_PORT` | `apps/backend`, `packages/email` | SMTP port. | `1025` |
-| `SMTP_USER` | `apps/backend`, `packages/email` | SMTP username. | `user` |
-| `SMTP_PASSWORD` | `apps/backend`, `packages/email` | SMTP password. | `password` |
-| `SNAPSHOT_DIR` | `apps/engine/src/trade/engine.ts` | Directory where `snapshot.json` is read/written. Defaults to `.`. | `/app/data` |
-| `WITH_SNAPSHOT` | `apps/engine/src/trade/engine.ts` | If set, engine attempts to restore from `SNAPSHOT_DIR/snapshot.json`. | `true` |
-| `BASE_URL` | `apps/market-maker` | Backend base URL for market-maker REST calls. | `http://localhost:3001` |
-| `MARKET_MAKER_USER_ID` | `apps/market-maker` | User ID used by the bot; defaults to `"5"`. | `5` |
-| `NEXT_PUBLIC_BACKEND_URL` | `apps/web/.env.example`; intended frontend auth/API config | Public backend URL; current `getBackendUrl()` does not read it. | `http://localhost:3001` |
-| `SERVER_BACKEND_URL` | `apps/web/.env.example` | Intended server-side backend URL. Current code does not read it. | `http://backend:3001` |
-| `NEXT_PUBLIC_EXCHANGE_API_URL` | `apps/web/app/utils/httpClient.ts`, `docker/web/Dockerfile` | Public REST API base including `/api/v1`. | `http://localhost:3001/api/v1` |
-| `NEXT_PUBLIC_EXCHANGE_WS_URL` | `apps/web/app/utils/SignalingManager.ts`, `docker/web/Dockerfile` | Public WebSocket URL. | `ws://localhost:3002` |
-| `BACKEND_URL` | `apps/integration-test/src/index.test.ts` | Backend URL for Vitest tests. | `http://localhost:3001` |
+| Variable                       | Used By                                                                                             | What It Does                                                                                                            | Example                                                  |
+| ------------------------------ | --------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------- |
+| `PORT`                         | `apps/backend`; integration scripts                                                                 | Port for Express `app.listen`.                                                                                          | `3001`                                                   |
+| `REDIS_URL`                    | `apps/backend`, `apps/engine`, `apps/websocket`, `apps/db-processor`                                | Redis connection URL for queues and pub/sub.                                                                            | `redis://localhost:6379`                                 |
+| `DATABASE_URL`                 | `packages/database`, `apps/backend`, `apps/engine`, `apps/db-processor/src/seedTimescale.ts`, CI/CD | Postgres URL for Prisma.                                                                                                | `postgresql://postgres:password@localhost:5432/postgres` |
+| `DIRECT_URL`                   | `packages/database/prisma.config.ts`; Prisma CLI on CI/CD and deploy hosts                          | Direct Postgres URL for Prisma migrations when runtime uses a pooled connection. Falls back to `DATABASE_URL` if unset. | `postgresql://postgres:password@localhost:5432/postgres` |
+| `TIMESCALE_USER`               | `apps/backend`, `apps/db-processor`                                                                 | TimescaleDB user for `pg.Client`.                                                                                       | `exchange`                                               |
+| `TIMESCALE_HOST`               | `apps/backend`, `apps/db-processor`                                                                 | TimescaleDB host.                                                                                                       | `localhost`                                              |
+| `TIMESCALE_DATABASE`           | `apps/backend`, `apps/db-processor`                                                                 | TimescaleDB database name.                                                                                              | `exchange`                                               |
+| `TIMESCALE_PASSWORD`           | `apps/backend`, `apps/db-processor`                                                                 | TimescaleDB password.                                                                                                   | `password`                                               |
+| `TIMESCALE_PORT`               | `apps/backend`, `apps/db-processor`                                                                 | TimescaleDB port; defaults to `5433` in code.                                                                           | `5433`                                                   |
+| `FRONTEND_URL_DEPLOYED`        | `apps/backend`                                                                                      | Allowed CORS/trusted origin for deployed frontend.                                                                      | `https://exchange.shikhar.site`                          |
+| `BETTER_AUTH_SECRET`           | Better Auth runtime through `apps/backend`                                                          | Secret used by Better Auth.                                                                                             | `replace-with-secret`                                    |
+| `BETTER_AUTH_URL`              | Better Auth runtime through `apps/backend`                                                          | Public backend auth URL.                                                                                                | `http://localhost:3001`                                  |
+| `GITHUB_CLIENT_ID`             | `apps/backend/src/lib/auth.ts`                                                                      | GitHub OAuth client ID.                                                                                                 | `Iv1.xxxxx`                                              |
+| `GITHUB_CLIENT_SECRET`         | `apps/backend/src/lib/auth.ts`                                                                      | GitHub OAuth client secret.                                                                                             | `github-secret`                                          |
+| `GOOGLE_CLIENT_ID`             | `apps/backend/src/lib/auth.ts`                                                                      | Google OAuth client ID.                                                                                                 | `google-client-id.apps.googleusercontent.com`            |
+| `GOOGLE_CLIENT_SECRET`         | `apps/backend/src/lib/auth.ts`                                                                      | Google OAuth client secret.                                                                                             | `google-secret`                                          |
+| `RESEND_API_KEY`               | `apps/backend`, `packages/email`                                                                    | Enables Resend email transport.                                                                                         | `re_xxxxx`                                               |
+| `EMAIL_FROM`                   | `apps/backend`, `packages/email`                                                                    | Verified sender used for OTP and email notifications.                                                                   | `Shikhar <noreply@example.com>`                          |
+| `SMTP_HOST`                    | `apps/backend`, `packages/email`                                                                    | Enables SMTP email transport when Resend is not set.                                                                    | `localhost`                                              |
+| `SMTP_PORT`                    | `apps/backend`, `packages/email`                                                                    | SMTP port.                                                                                                              | `1025`                                                   |
+| `SMTP_USER`                    | `apps/backend`, `packages/email`                                                                    | SMTP username.                                                                                                          | `user`                                                   |
+| `SMTP_PASSWORD`                | `apps/backend`, `packages/email`                                                                    | SMTP password.                                                                                                          | `password`                                               |
+| `SNAPSHOT_DIR`                 | `apps/engine/src/trade/engine.ts`                                                                   | Directory where `snapshot.json` is read/written. Defaults to `.`.                                                       | `/app/data`                                              |
+| `WITH_SNAPSHOT`                | `apps/engine/src/trade/engine.ts`                                                                   | If set, engine attempts to restore from `SNAPSHOT_DIR/snapshot.json`.                                                   | `true`                                                   |
+| `BASE_URL`                     | `apps/market-maker`                                                                                 | Backend base URL for market-maker REST calls.                                                                           | `http://localhost:3001`                                  |
+| `MARKET_MAKER_USER_ID`         | `apps/market-maker`                                                                                 | User ID used by the bot; defaults to `"5"`.                                                                             | `5`                                                      |
+| `NEXT_PUBLIC_BACKEND_URL`      | `apps/web/.env.example`; intended frontend auth/API config                                          | Public backend URL; current `getBackendUrl()` does not read it.                                                         | `http://localhost:3001`                                  |
+| `SERVER_BACKEND_URL`           | `apps/web/.env.example`                                                                             | Intended server-side backend URL. Current code does not read it.                                                        | `http://backend:3001`                                    |
+| `NEXT_PUBLIC_EXCHANGE_API_URL` | `apps/web/app/utils/httpClient.ts`, `docker/web/Dockerfile`                                         | Public REST API base including `/api/v1`.                                                                               | `http://localhost:3001/api/v1`                           |
+| `NEXT_PUBLIC_EXCHANGE_WS_URL`  | `apps/web/app/utils/SignalingManager.ts`, `docker/web/Dockerfile`                                   | Public WebSocket URL.                                                                                                   | `ws://localhost:3002`                                    |
+| `BACKEND_URL`                  | `apps/integration-test/src/index.test.ts`                                                           | Backend URL for Vitest tests.                                                                                           | `http://localhost:3001`                                  |
 
 Additional CD-only values are stored as GitHub secrets, including `SSH_HOST`, `SSH_USERNAME`, `SSH_KEY`, `SSH_PASSPHRASE`, `GHCR_PAT`, and `GITHUB_TOKEN`.
 

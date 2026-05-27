@@ -48,6 +48,28 @@ export interface OpenInterest {
   timestamp: number;
 }
 
+export interface Balance {
+  currency: string;
+  available: number;
+  locked: number;
+}
+
+export interface OpenOrder {
+  orderId: string;
+  executedQty: number;
+  price: string;
+  quantity: string;
+  side: "buy" | "sell";
+  userId: string;
+}
+
+export interface OrderHistoryItem extends OpenOrder {
+  market: string;
+  status: "OPEN" | "PARTIALLY_FILLED" | "FILLED" | "CANCELLED";
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface SparklinePoint {
   close: string;
   end: string;

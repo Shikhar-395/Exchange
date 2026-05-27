@@ -8,6 +8,7 @@ import { Depth } from "@/app/components/depth/Depth";
 import { BottomDashboardMock } from "@/app/components/BottomDashboardMock";
 import { authClient } from "@/lib/auth";
 import { Button } from "@repo/ui/components/button";
+import { motion } from "framer-motion";
 
 export default function Page() {
   const { market } = useParams();
@@ -48,24 +49,52 @@ export default function Page() {
   }
 
   return (
-    <div className="exchange-shell flex min-h-[calc(100vh-56px)] w-full flex-row overflow-hidden bg-[#090d14] text-[#dce4ef]">
-      <div className="flex min-h-0 min-w-0 flex-col flex-1 overflow-y-auto">
-        <MarketBar market={m} />
-        <div className="flex h-[620px] flex-row border-y border-[#1a2232]">
-          <div className="flex min-h-[620px] min-w-0 flex-col flex-1">
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5, ease: "easeOut" }}
+      className="exchange-shell flex h-[calc(100vh-60px)] w-full flex-row overflow-hidden bg-[#090d14] text-[#dce4ef] px-3 pt-2 pb-6 gap-3"
+    >
+      {/* Left Column: Ticker, Chart, Depth, and Balances */}
+      <motion.div
+        initial={{ opacity: 0, x: -12 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.45, ease: "easeOut", delay: 0.05 }}
+        className="flex min-h-0 min-w-0 flex-col flex-1 gap-2 overflow-hidden"
+      >
+        {/* Ticker Bar Card */}
+        <div className="overflow-hidden rounded-xl border border-white/[0.05] bg-[#0b0f17] shrink-0 shadow-sm">
+          <MarketBar market={m} />
+        </div>
+
+        {/* Middle row: Chart + Orderbook */}
+        <div className="flex flex-1 min-h-0 flex-row gap-4">
+          {/* TradingView Chart Card */}
+          <div className="flex flex-1 min-h-0 flex-col overflow-hidden rounded-xl border border-white/[0.05] bg-[#0b0f17] shadow-sm">
             <TradeView market={m} />
           </div>
-          <div className="flex min-h-[620px] w-[300px] flex-col overflow-hidden border-l border-[#1a2232]">
+
+          {/* Depth / Orderbook Card */}
+          <div className="flex w-[280px] shrink-0 flex-col overflow-hidden rounded-xl border border-white/[0.05] bg-[#0b0f17] shadow-sm">
             <Depth market={m} />
           </div>
         </div>
-        <BottomDashboardMock />
-      </div>
-      <div className="relative flex min-h-0 shrink-0 bg-[#090d14]">
-        <div className="sticky top-0 flex h-screen w-[320px] shrink-0 flex-col border-l border-[#1a2232] bg-[#090d14]">
-          <SwapUI market={m} />
+
+        {/* Bottom Balances Card */}
+        <div className="h-[210px] shrink-0 overflow-hidden rounded-xl border border-white/[0.05] bg-[#0b1019] shadow-sm">
+          <BottomDashboardMock market={m} />
         </div>
-      </div>
-    </div>
+      </motion.div>
+
+      {/* Right Column: Swap Action Panel */}
+      <motion.div
+        initial={{ opacity: 0, x: 12 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.45, ease: "easeOut", delay: 0.1 }}
+        className="h-full w-[310px] shrink-0"
+      >
+        <SwapUI market={m} />
+      </motion.div>
+    </motion.div>
   );
 }

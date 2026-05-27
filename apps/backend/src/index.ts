@@ -17,6 +17,7 @@ import { klineRouter } from "./router/klineRouter";
 import { tickersRouter } from "./router/tickerRouter";
 import { openInterestRouter } from "./router/openInterestRouter";
 import { marketDataKlinesRouter } from "./router/marketDataKlinesRouter";
+import { balanceRouter } from "./router/balanceRouter";
 
 const app = express();
 
@@ -62,6 +63,7 @@ app.use("/api/v1/trades", tradesRouter);
 app.use("/api/v1/klines", klineRouter);
 app.use("/api/v1/tickers", tickersRouter);
 app.use("/api/v1/openInterest", openInterestRouter);
+app.use("/api/v1/balance", balanceRouter);
 app.use("/wapi/v1/marketDataKlines", marketDataKlinesRouter);
 
 app.get("/api/v1/todos", authMiddleware, async (req, res) => {

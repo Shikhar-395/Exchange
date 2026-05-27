@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { motion } from "framer-motion";
 import { Ticker } from "../utils/types";
 import { getMarketDataKlines, getTickers } from "../utils/httpClient";
 
@@ -90,14 +91,30 @@ const topSections = [
   },
 ];
 
-export const Markets = () => {
+export const Markets = ({
+  showTopCards = true,
+  showTable = true,
+}: {
+  showTopCards?: boolean;
+  showTable?: boolean;
+}) => {
+  const router = useRouter();
   const [tickers, setTickers] = useState<Ticker[]>();
+  const [marketDataError, setMarketDataError] = useState(false);
   const [klineMap, setKlineMap] = useState<Map<string, number[]>>(new Map());
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+  const [hoveredRowSymbol, setHoveredRowSymbol] = useState<string | null>(null);
 
   useEffect(() => {
     getTickers()
-      .then(setTickers)
-      .catch(() => setTickers([]));
+      .then((data) => {
+        setMarketDataError(false);
+        setTickers(data);
+      })
+      .catch(() => {
+        setMarketDataError(true);
+        setTickers([]);
+      });
 
     getMarketDataKlines()
       .then((arr) => {
@@ -135,149 +152,203 @@ export const Markets = () => {
     : undefined;
 
   return (
-    <div className="flex flex-col flex-1 max-w-[1280px] w-full mx-auto gap-4">
-      <div className="relative overflow-hidden rounded-xl border border-[var(--auth-border)] bg-[var(--auth-surface)]">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_85%_20%,rgba(76,148,255,0.24),transparent_35%),radial-gradient(circle_at_20%_80%,rgba(0,194,120,0.14),transparent_35%)]" />
-        <div className="relative flex items-center justify-between gap-6 px-6 py-7 md:px-10">
-          <button
-            type="button"
-            className="text-2xl text-[var(--auth-text-muted)] hover:text-[var(--auth-text)]"
-          >
-            ‹
-          </button>
-          <div className="flex-1">
-            <p className="text-2xl font-semibold tracking-tight text-[var(--auth-text)] md:text-4xl">
-              Earn <span className="text-green-400">4.70%</span> APY on your SOL
-              collateral
-            </p>
-            <p className="mt-2 text-sm text-[var(--auth-text-muted)]">
-              Lend SOL to earn staking yield and use it as collateral while
-              trading.
-            </p>
-            <button
-              type="button"
-              className="mt-4 rounded-lg border border-[var(--auth-color-primary)]/40 bg-[var(--auth-color-primary)]/15 px-4 py-2 text-xs font-semibold text-[var(--auth-text)] hover:bg-[var(--auth-color-primary)]/25"
-            >
-              Lend SOL
-            </button>
-          </div>
-          <div className="hidden size-28 rounded-full border border-[var(--auth-border)] bg-[var(--auth-surface-strong)] shadow-[0_0_80px_rgba(76,148,255,0.25)] md:block" />
-          <button
-            type="button"
-            className="text-2xl text-[var(--auth-text-muted)] hover:text-[var(--auth-text)]"
-          >
-            ›
-          </button>
-        </div>
-        <div className="relative flex justify-center gap-1 pb-3">
-          <span className="h-1.5 w-1.5 rounded-full bg-[var(--auth-text-muted)]/40" />
-          <span className="h-1.5 w-1.5 rounded-full bg-[var(--auth-text-muted)]/40" />
-          <span className="h-1.5 w-5 rounded-full bg-[var(--auth-text)]/90" />
-          <span className="h-1.5 w-1.5 rounded-full bg-[var(--auth-text-muted)]/40" />
-          <span className="h-1.5 w-1.5 rounded-full bg-[var(--auth-text-muted)]/40" />
-        </div>
-      </div>
+    <div
+      className={`flex flex-col max-w-[1280px] w-full mx-auto gap-4 ${
+        showTable ? "flex-1 justify-start" : "justify-center my-auto"
+      }`}
+    >
+      {showTopCards && (
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+          {topSections.map((section, idx) => {
+            let subtitle = "New token listings";
+            if (section.title === "Top Movers") {
+              subtitle = "Top gainers last 24h";
+            } else if (section.title === "Popular") {
+              subtitle = "Highest trading volume";
+            }
 
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-        {topSections.map((section) => (
-          <div
-            key={section.title}
-            className="rounded-xl border border-[var(--auth-border)] bg-[var(--auth-surface)] p-4"
-          >
-            <div className="mb-2 flex items-center justify-between">
-              <p className="text-sm font-semibold text-[var(--auth-text)]">
-                {section.title}
-              </p>
-              <p className="text-xs text-[var(--auth-text-muted)]">
-                24h Change
-              </p>
-            </div>
-            <div className="space-y-2">
-              {section.rows.map((row) => (
-                <div
-                  key={row.symbol}
-                  className="flex items-center gap-2 text-xs"
-                >
-                  <span className="w-[45%] text-[var(--auth-text)]">
-                    {row.symbol}
+            const isCardBlurred = hoveredIndex !== null && hoveredIndex !== idx;
+
+            return (
+              <motion.div
+                key={section.title}
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: idx * 0.1 }}
+                whileHover={
+                  !isCardBlurred ? { y: -5, scale: 1.012 } : undefined
+                }
+                onMouseEnter={() => setHoveredIndex(idx)}
+                onMouseLeave={() => setHoveredIndex(null)}
+                className={`rounded-[24px] border border-[var(--auth-border)] dark:border-white/[0.06] bg-[var(--auth-surface)] p-3.5 pb-4 shadow-[0_8px_30px_rgba(0,0,0,0.06)] dark:shadow-[0_8px_30px_rgba(0,0,0,0.25)] backdrop-blur-md transition-all duration-300 hover:shadow-2xl hover:border-black/10 dark:hover:border-white/12 ease-out ${
+                  isCardBlurred ? "blur-[1px] scale-[0.98] opacity-50" : ""
+                }`}
+              >
+                {/* Centered Header outside the inner card as shown in inspiration image */}
+                <div className="flex flex-col items-center justify-center pt-1.5 pb-3.5 gap-0.5">
+                  <span className="text-xs font-extrabold text-[var(--auth-text)] tracking-wider uppercase">
+                    {section.title}
                   </span>
-                  <span className="w-[30%] text-right text-[var(--auth-text)]">
-                    {row.price}
-                  </span>
-                  <span
-                    className={`w-[25%] text-right font-medium ${
-                      row.change >= 0 ? "text-green-400" : "text-red-400"
-                    }`}
-                  >
-                    {row.change >= 0 ? "+" : ""}
-                    {row.change.toFixed(2)}%
+                  <span className="text-[9px] font-bold text-[var(--auth-text-muted)] tracking-widest uppercase opacity-85">
+                    {subtitle}
                   </span>
                 </div>
-              ))}
-            </div>
+
+                {/* Inner card containing the ticker rows (nested border & darker background) */}
+                <div className="rounded-[16px] border border-black/[0.03] dark:border-white/[0.06] bg-black/10 dark:bg-black/35 shadow-inner p-1.5 backdrop-blur-md">
+                  {/* Header row in inner card */}
+                  <div className="flex items-center justify-between px-3 py-1.5 text-[9px] font-extrabold text-[var(--auth-text-muted)] uppercase tracking-wider border-b border-black/[0.03] dark:border-white/[0.04] mb-1">
+                    <span className="w-[45%] text-left">Asset</span>
+                    <span className="w-[30%] text-right">Price</span>
+                    <span className="w-[25%] text-right">24h Chg</span>
+                  </div>
+
+                  <div className="space-y-0.5">
+                    {section.rows.map((row) => {
+                      const baseSymbol = row.symbol.split("_")[0] || "";
+                      const iconUrl = `https://backpack.exchange/coins/${baseSymbol.toLowerCase()}.png`;
+                      return (
+                        <div
+                          key={row.symbol}
+                          onClick={() => router.push(`/trade/${row.symbol}`)}
+                          className="flex items-center justify-between py-2.5 px-3 rounded-xl hover:bg-white/[0.05] dark:hover:bg-white/[0.05] hover:bg-black/[0.03] transition-all duration-200 cursor-pointer group"
+                        >
+                          <div className="flex items-center gap-2.5 w-[45%]">
+                            <img
+                              src={iconUrl}
+                              alt={`${baseSymbol} logo`}
+                              className="size-[22px] rounded-full object-cover shrink-0 shadow-sm bg-white/5 transition-transform duration-200 group-hover:scale-110"
+                              loading="lazy"
+                              onError={(e) => {
+                                e.currentTarget.style.display = "none";
+                              }}
+                            />
+                            <span className="font-semibold text-xs text-[var(--auth-text)] tracking-tight group-hover:text-[var(--auth-color-primary)] transition-colors">
+                              {row.symbol}
+                            </span>
+                          </div>
+                          <span className="w-[30%] text-right font-medium text-xs tabular-nums text-[var(--auth-text)]">
+                            {row.price}
+                          </span>
+                          <span
+                            className={`w-[25%] text-right font-bold text-xs tabular-nums transition-transform duration-200 group-hover:scale-105 ${
+                              row.change >= 0
+                                ? "text-emerald-400"
+                                : "text-rose-400"
+                            }`}
+                          >
+                            {row.change >= 0 ? "+" : ""}
+                            {row.change.toFixed(2)}%
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </motion.div>
+            );
+          })}
+        </div>
+      )}
+
+      {showTable && (
+        <motion.div
+          whileHover={{ y: -4, scale: 1.002 }}
+          transition={{ duration: 0.3, ease: "easeOut" }}
+          className="rounded-[24px] border border-[var(--auth-border)] dark:border-white/[0.06] bg-[var(--auth-surface)] p-3.5 pb-4 shadow-[0_8px_30px_rgba(0,0,0,0.06)] dark:shadow-[0_8px_30px_rgba(0,0,0,0.25)] backdrop-blur-md transition-all duration-300 hover:shadow-2xl hover:border-black/10 dark:hover:border-white/12 ease-out"
+        >
+          {/* Table Centered/Styled Header */}
+          <div className="flex items-center justify-between px-3.5 pt-1.5 pb-3.5">
+            <h3 className="text-sm font-extrabold text-[var(--auth-text)] tracking-wider uppercase">
+              Spot Markets
+            </h3>
+            <span className="text-[9px] font-bold text-[var(--auth-text-muted)] tracking-widest uppercase opacity-85">
+              Live Trading Pairs
+            </span>
           </div>
-        ))}
-      </div>
 
-      <div className="rounded-xl border border-[var(--auth-border)] bg-[var(--auth-surface)] overflow-hidden">
-        <table className="w-full table-auto">
-          <thead>
-            <tr className="border-b border-[var(--auth-border)]">
-              {[
-                "Name",
-                "Price",
-                "24h Volume",
-                "Market Cap",
-                "24h Change",
-                "Last 7 Days",
-              ].map((h) => (
-                <th
-                  key={h}
-                  className="px-4 py-3 text-left text-xs font-medium text-[var(--auth-text-muted)] uppercase tracking-wider"
-                >
-                  {h}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {ordered?.map((m) => (
-              <MarketRow
-                key={m.symbol}
-                market={m}
-                klinePoints={klineMap.get(m.symbol)}
-              />
-            ))}
-          </tbody>
-        </table>
+          {/* Inner card nested border & darker background */}
+          <div className="rounded-[16px] border border-black/[0.03] dark:border-white/[0.06] bg-black/10 dark:bg-black/35 shadow-inner backdrop-blur-md overflow-hidden">
+            <table className="w-full table-auto">
+              <thead>
+                <tr className="border-b border-black/[0.05] dark:border-white/[0.05] bg-black/[0.02] dark:bg-black/[0.1]">
+                  {[
+                    "Name",
+                    "Price",
+                    "24h Volume",
+                    "Market Cap",
+                    "24h Change",
+                    "Last 7 Days",
+                  ].map((h) => (
+                    <th
+                      key={h}
+                      className="px-4 py-3.5 text-left text-[10px] font-bold text-[var(--auth-text-muted)] uppercase tracking-wider"
+                    >
+                      {h}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {ordered?.map((m, index) => (
+                  <MarketRow
+                    key={m.symbol}
+                    index={index}
+                    market={m}
+                    klinePoints={klineMap.get(m.symbol)}
+                    isBlurred={
+                      hoveredRowSymbol !== null && hoveredRowSymbol !== m.symbol
+                    }
+                    onMouseEnter={() => setHoveredRowSymbol(m.symbol)}
+                    onMouseLeave={() => setHoveredRowSymbol(null)}
+                  />
+                ))}
+              </tbody>
+            </table>
 
-        {ordered?.length === 0 && (
-          <p className="py-10 text-center text-sm text-[var(--auth-text-muted)]">
-            No markets found.
-          </p>
-        )}
+            {marketDataError && (
+              <p className="py-10 text-center text-sm text-[var(--auth-text-muted)]">
+                Market data unavailable.
+              </p>
+            )}
 
-        {!tickers && (
-          <div className="flex flex-col gap-0">
-            {Array.from({ length: 8 }).map((_, i) => (
-              <div
-                key={i}
-                className="h-[80px] border-b border-[var(--auth-border)] animate-pulse bg-[var(--auth-surface-strong)]"
-              />
-            ))}
+            {!marketDataError && ordered?.length === 0 && (
+              <p className="py-10 text-center text-sm text-[var(--auth-text-muted)]">
+                No markets found.
+              </p>
+            )}
+
+            {!tickers && (
+              <div className="flex flex-col gap-0">
+                {Array.from({ length: 8 }).map((_, i) => (
+                  <div
+                    key={i}
+                    className="h-[80px] border-b border-[var(--auth-border)] animate-pulse bg-[var(--auth-surface-strong)]"
+                  />
+                ))}
+              </div>
+            )}
           </div>
-        )}
-      </div>
+        </motion.div>
+      )}
     </div>
   );
 };
 
 function MarketRow({
   market,
+  index,
   klinePoints,
+  isBlurred,
+  onMouseEnter,
+  onMouseLeave,
 }: {
   market: Ticker;
+  index: number;
   klinePoints?: number[];
+  isBlurred: boolean;
+  onMouseEnter: () => void;
+  onMouseLeave: () => void;
 }) {
   const router = useRouter();
   const change = market.priceChangePercent
@@ -295,9 +366,16 @@ function MarketRow({
   const marketLabel = market.symbol.replace("_", "-");
 
   return (
-    <tr
-      className="cursor-pointer border-b border-[var(--auth-border)] last:border-0 hover:bg-[var(--auth-surface-strong)] transition-colors"
+    <motion.tr
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.35, ease: "easeOut", delay: index * 0.035 }}
+      className={`cursor-pointer border-b border-black/[0.04] dark:border-white/[0.04] last:border-0 hover:bg-black/[0.015] dark:hover:bg-white/[0.02] transition-all duration-300 ease-out ${
+        isBlurred ? "blur-[0.5px] opacity-40 scale-[0.995]" : ""
+      }`}
       onClick={() => router.push(`/trade/${market.symbol}`)}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
     >
       <td className="px-4 py-6">
         <div className="flex items-center gap-3">
@@ -359,6 +437,6 @@ function MarketRow({
       <td className="px-4 py-6">
         <Sparkline points={klinePoints ?? []} />
       </td>
-    </tr>
+    </motion.tr>
   );
 }

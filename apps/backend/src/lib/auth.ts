@@ -6,24 +6,28 @@ import { prisma } from "@repo/database/client";
 import { sendEmail } from "@repo/email/email";
 import { createAuthMiddleware } from "better-auth/api";
 
+const trustedOrigins = [
+  process.env.FRONTEND_URL_DEPLOYED,
+  "http://localhost:3000",
+  "http://web:3000",
+].filter((origin): origin is string => Boolean(origin));
+
 export const auth = betterAuth({
   database: prismaAdapter(prisma, {
     provider: "postgresql",
   }),
-  advanced: {
-    crossSubDomainCookies: {
-      enabled: true,
-      domain: ".nagmani.site",
-    },
-  },
-  trustedOrigins: [
-    process.env.FRONTEND_URL_DEPLOYED!,
-    "http://localhost:3000",
-    "http://web:3000",
-  ],
+  advanced: process.env.AUTH_COOKIE_DOMAIN
+    ? {
+        crossSubDomainCookies: {
+          enabled: true,
+          domain: process.env.AUTH_COOKIE_DOMAIN,
+        },
+      }
+    : undefined,
+  trustedOrigins,
   emailAndPassword: {
     enabled: true,
-    requireEmailVerification: true,
+    requireEmailVerification: false,
   },
   hooks: {
     before: createAuthMiddleware(async (ctx) => {

@@ -37,17 +37,17 @@ export function UserMenu() {
 
   if (!session?.user) {
     return (
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1 sm:gap-2">
         <Button
           asChild
           variant="ghost"
-          className="h-9 rounded-xl border border-[var(--auth-border)] bg-[var(--auth-surface-strong)] px-3 text-[var(--auth-text)] hover:bg-[var(--auth-surface)]"
+          className="h-9 rounded-xl border border-[var(--auth-border)] bg-[var(--auth-surface-strong)] px-2 text-[var(--auth-text)] hover:bg-[var(--auth-surface)] sm:px-3 mac-app-hover"
         >
           <Link href="/signin">Sign in</Link>
         </Button>
         <Button
           asChild
-          className="h-9 rounded-xl border border-[var(--auth-border)] bg-[var(--auth-color-primary)] px-3 text-[var(--app-color-foreground)] hover:brightness-105"
+          className="hidden h-9 rounded-xl border border-[var(--auth-border)] bg-[var(--auth-color-primary)] px-3 text-[var(--app-color-foreground)] hover:brightness-105 sm:inline-flex mac-app-hover"
         >
           <Link href="/signup">Sign up</Link>
         </Button>
@@ -66,7 +66,7 @@ export function UserMenu() {
       <DropdownMenuTrigger asChild>
         <button
           type="button"
-          className="grid size-9 place-items-center overflow-hidden rounded-full border border-[var(--auth-border)] bg-[var(--auth-surface-strong)] outline-none ring-offset-background transition-colors hover:bg-[var(--auth-surface)] focus-visible:ring-2 focus-visible:ring-[var(--auth-color-primary)]"
+          className="grid size-9 place-items-center overflow-hidden rounded-full border border-[var(--auth-border)] bg-[var(--auth-surface-strong)] outline-none ring-offset-background transition-colors hover:bg-[var(--auth-surface)] focus-visible:ring-2 focus-visible:ring-[var(--auth-color-primary)] mac-app-hover"
           aria-label="Open user menu"
         >
           {image ? (
@@ -77,7 +77,7 @@ export function UserMenu() {
               className="h-full w-full object-cover"
             />
           ) : (
-            <span className="text-xs font-semibold text-[var(--auth-text)]">
+            <span className="text-sm font-semibold text-[var(--auth-text)]">
               {initials}
             </span>
           )}
@@ -100,7 +100,7 @@ export function UserMenu() {
           asChild
           className="cursor-pointer rounded-lg px-3 py-2"
         >
-          <Link href="/markets">
+          <Link href="/">
             <UserCircle2 className="size-4 text-[var(--auth-text-muted)]" />
             Profile
           </Link>
@@ -108,10 +108,9 @@ export function UserMenu() {
         <DropdownMenuSeparator className="bg-[var(--auth-border)]" />
         <DropdownMenuItem
           onClick={handleSignOut}
-          className="cursor-pointer rounded-lg px-3 py-2"
-          variant="destructive"
+          className="cursor-pointer rounded-lg px-3 py-2 text-[#ff4d5e] hover:!text-[#ff6675] hover:!bg-[#ff4d5e]/10 focus:!text-[#ff6675] focus:!bg-[#ff4d5e]/10 font-semibold transition-all"
         >
-          <LogOut className="size-4" />
+          <LogOut className="size-4 text-[#ff4d5e]" />
           Log out
         </DropdownMenuItem>
       </DropdownMenuContent>

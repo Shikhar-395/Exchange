@@ -50,6 +50,7 @@ export async function sendEmail(options: ResendEmailOptions) {
   if (transporter) {
     return await sendEmailViaNodemailer({
       to: options.to,
+      from: options.from,
       subject: options.subject!,
       react: options.react,
       transporter,

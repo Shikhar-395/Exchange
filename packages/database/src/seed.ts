@@ -98,18 +98,7 @@ const NAMES: Record<string, string> = {
   ZRO: "LayerZero",
 };
 
-const TOP_BASES = [
-  "BTC",
-  "ETH",
-  "SOL",
-  "XRP",
-  "BNB",
-  "DOGE",
-  "ADA",
-  "AVAX",
-  "LINK",
-  "TON",
-];
+const TOP_BASES = ["BTC", "ETH", "SOL", "BNB", "XRP"];
 
 const RAW_SYMBOLS = TOP_BASES.map((base) => `${base}_USDC`);
 

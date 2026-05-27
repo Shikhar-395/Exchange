@@ -1,20 +1,4 @@
 services:
-  database:
-    image: postgres
-    container_name: database
-    restart: always
-    environment:
-      - POSTGRES_PASSWORD=nagmani
-    ports:
-      - '5432:5432'
-    volumes:
-      - pgdata:/var/lib/postgresql
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 1s
-      timeout: 10s
-      retries: 10
-
   redis:
     image: redis
     container_name: redis
@@ -38,7 +22,7 @@ services:
     environment:
       POSTGRES_DB: exchange
       POSTGRES_USER: exchange
-      POSTGRES_PASSWORD: nagmani
+      POSTGRES_PASSWORD: ${TIMESCALE_PASSWORD:-change-me}
     volumes:
       - timescale-data:/var/lib/postgresql/data
     healthcheck:
@@ -48,7 +32,7 @@ services:
       retries: 10
 
   backend:
-    image: ghcr.io/nagmani001/exchange/backend:latest
+    image: ${IMAGE_PREFIX:-ghcr.io/shikhar/exchange}/backend:${IMAGE_TAG:-latest}
     container_name: backend
     restart: always
     ports:
@@ -56,15 +40,13 @@ services:
     env_file:
       - .env.backend
     depends_on:
-      database:
-        condition: service_healthy
       redis:
         condition: service_healthy
       timescaledb:
         condition: service_healthy
 
   engine:
-    image: ghcr.io/nagmani001/exchange/engine:latest
+    image: ${IMAGE_PREFIX:-ghcr.io/shikhar/exchange}/engine:${IMAGE_TAG:-latest}
     container_name: engine
     restart: always
     env_file:
@@ -72,13 +54,11 @@ services:
     volumes:
       - engine-data:/app/data
     depends_on:
-      database:
-        condition: service_healthy
       redis:
         condition: service_healthy
 
   db-processor:
-    image: ghcr.io/nagmani001/exchange/db-processor:latest
+    image: ${IMAGE_PREFIX:-ghcr.io/shikhar/exchange}/db-processor:${IMAGE_TAG:-latest}
     container_name: db-processor
     restart: always
     env_file:
@@ -90,7 +70,7 @@ services:
         condition: service_healthy
 
   websocket:
-    image: ghcr.io/nagmani001/exchange/websocket:latest
+    image: ${IMAGE_PREFIX:-ghcr.io/shikhar/exchange}/websocket:${IMAGE_TAG:-latest}
     container_name: websocket
     restart: always
     ports:
@@ -102,7 +82,7 @@ services:
         condition: service_healthy
 
   market-maker:
-    image: ghcr.io/nagmani001/exchange/market-maker:latest
+    image: ${IMAGE_PREFIX:-ghcr.io/shikhar/exchange}/market-maker:${IMAGE_TAG:-latest}
     container_name: market-maker
     restart: always
     env_file:
@@ -111,7 +91,7 @@ services:
       - backend
 
   web:
-    image: ghcr.io/nagmani001/exchange/web:latest
+    image: ${IMAGE_PREFIX:-ghcr.io/shikhar/exchange}/web:${IMAGE_TAG:-latest}
     container_name: web
     restart: always
     ports:
@@ -122,11 +102,10 @@ services:
       context: ../..
       dockerfile: docker/web/Dockerfile
       args:
-        NEXT_PUBLIC_EXCHANGE_API_URL: https://api.exchange.nagmani.site/api/v1
-        NEXT_PUBLIC_EXCHANGE_WS_URL: wss://ws.exchange.nagmani.site
+        NEXT_PUBLIC_EXCHANGE_API_URL: ${NEXT_PUBLIC_EXCHANGE_API_URL:-https://api.exchange.shikhar.site/api/v1}
+        NEXT_PUBLIC_EXCHANGE_WS_URL: ${NEXT_PUBLIC_EXCHANGE_WS_URL:-wss://ws.exchange.shikhar.site}
 
 volumes:
-  pgdata:
   redis-data:
   timescale-data:
   engine-data:

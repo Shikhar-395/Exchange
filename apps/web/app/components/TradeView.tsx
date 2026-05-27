@@ -144,7 +144,7 @@ export function TradeView({ market }: { market: string }) {
   }, []);
 
   return (
-    <div className="flex w-full flex-col">
+    <div className="flex flex-1 flex-col min-h-0 w-full">
       <div className="flex items-center justify-between border-b border-[#1a2232] bg-[#0b0f17] px-2 py-1">
         <div className="flex gap-1">
           {ORDER.map((k) => (
@@ -173,7 +173,7 @@ export function TradeView({ market }: { market: string }) {
           </button>
         </div>
       </div>
-      <div ref={chartRef} style={{ height: "520px", width: "100%" }} />
+      <div ref={chartRef} className="flex-1 min-h-0 w-full" />
     </div>
   );
 }

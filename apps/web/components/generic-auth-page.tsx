@@ -36,11 +36,11 @@ export function GenericAuthPage({
       transition={{ duration: 0.45 }}
       style={getAuthThemeVars(colors)}
       className={cn(
-        "relative z-10 w-full max-w-md rounded-2xl border border-[var(--auth-border)] bg-[var(--auth-surface)] p-8 shadow-[0_28px_90px_-45px_rgba(0,0,0,0.95),0_0_0_1px_rgba(255,255,255,0.04)] backdrop-blur-md",
+        "relative z-10 w-full max-w-sm rounded-2xl border border-[var(--auth-border)] bg-[var(--auth-surface)] p-6 shadow-[0_28px_90px_-45px_rgba(0,0,0,0.95),0_0_0_1px_rgba(255,255,255,0.04)] backdrop-blur-md",
       )}
     >
-      <div className="text-center mb-8">
-        <Link href="/" className="inline-flex items-center gap-2 mb-6">
+      <div className="text-center mb-6">
+        <Link href="/" className="inline-flex items-center gap-2 mb-4">
           <img
             src={BRAND_LOGO_URL}
             alt="Exchange logo"
@@ -51,8 +51,8 @@ export function GenericAuthPage({
             Exchange
           </span>
         </Link>
-        <h1 className="text-2xl font-bold text-[var(--auth-text)]">{title}</h1>
-        <p className="mt-1 text-sm text-[var(--auth-text-muted)]">{subtitle}</p>
+        <h1 className="text-xl font-bold text-[var(--auth-text)]">{title}</h1>
+        <p className="mt-1 text-xs text-[var(--auth-text-muted)]">{subtitle}</p>
       </div>
 
       {children}

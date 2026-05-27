@@ -46,3 +46,16 @@
   width: 100%;
   overflow-x: hidden;
 }
+
+/* macOS Dock App-like Pop Up Hover Effect */
+.mac-app-hover {
+  transition: transform 0.32s cubic-bezier(0.34, 1.56, 0.64, 1), background-color 0.2s, color 0.2s, box-shadow 0.2s;
+}
+
+.mac-app-hover:hover {
+  transform: translateY(-5px) scale(1.08);
+}
+
+.mac-app-hover:active {
+  transform: translateY(-1px) scale(0.96);
+}

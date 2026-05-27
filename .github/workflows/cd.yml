@@ -7,7 +7,9 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_PREFIX: ghcr.io/nagmani001/exchange
+  IMAGE_PREFIX: ${{ vars.IMAGE_PREFIX || format('ghcr.io/{0}/exchange', github.repository_owner) }}
+  PUBLIC_API_URL: ${{ vars.NEXT_PUBLIC_EXCHANGE_API_URL || 'https://api.exchange.shikhar.site/api/v1' }}
+  PUBLIC_WS_URL: ${{ vars.NEXT_PUBLIC_EXCHANGE_WS_URL || 'wss://ws.exchange.shikhar.site' }}
 
 jobs:
   changes:
@@ -195,11 +197,14 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: Build web via compose (uses inline build.args)
+        env:
+          NEXT_PUBLIC_EXCHANGE_API_URL: ${{ env.PUBLIC_API_URL }}
+          NEXT_PUBLIC_EXCHANGE_WS_URL: ${{ env.PUBLIC_WS_URL }}
         run: |
           docker compose -f docker/compose-files/docker-compose-deploy.yml build web
-          docker tag ghcr.io/nagmani001/exchange/web:latest ghcr.io/nagmani001/exchange/web:${{ github.sha }}
-          docker push ghcr.io/nagmani001/exchange/web:latest
-          docker push ghcr.io/nagmani001/exchange/web:${{ github.sha }}
+          docker tag "$IMAGE_PREFIX/web:latest" "$IMAGE_PREFIX/web:${{ github.sha }}"
+          docker push "$IMAGE_PREFIX/web:latest"
+          docker push "$IMAGE_PREFIX/web:${{ github.sha }}"
 
   deploy:
     needs:
@@ -236,11 +241,12 @@ jobs:
             set -euo pipefail
             cd /home/${{ secrets.SSH_USERNAME }}/exchange
 
+            export IMAGE_PREFIX="${{ env.IMAGE_PREFIX }}"
+            export IMAGE_TAG="latest"
             docker compose -f docker-compose-deploy.yml pull
             docker compose -f docker-compose-deploy.yml up -d
 
-            # Wait for DB containers before letting migrate run
-            until docker exec database pg_isready -U postgres; do sleep 2; done
+            # Wait for TimescaleDB before letting schema setup run
             until docker exec timescaledb pg_isready -U exchange; do sleep 2; done
 
   migrate:

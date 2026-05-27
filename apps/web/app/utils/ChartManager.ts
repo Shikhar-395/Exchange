@@ -26,6 +26,14 @@ export interface ChartTheme {
   crosshairColor?: string;
 }
 
+function formatChartPrice(value: number) {
+  const abs = Math.abs(value);
+  const fractionDigits = abs >= 100 ? 2 : abs >= 1 ? 4 : 6;
+  return value.toLocaleString("en-US", {
+    maximumFractionDigits: fractionDigits,
+  });
+}
+
 export class ChartManager {
   private chart: IChartApi;
   private candleSeries: ISeriesApi<"Candlestick">;
@@ -72,12 +80,15 @@ export class ChartManager {
           labelBackgroundColor: "#121c2c",
         },
       },
-      rightPriceScale: {
+      leftPriceScale: {
         visible: true,
         ticksVisible: true,
         entireTextOnly: true,
         borderVisible: false,
         scaleMargins: { top: 0.06, bottom: 0.2 },
+      },
+      rightPriceScale: {
+        visible: false,
       },
       timeScale: {
         visible: true,
@@ -100,17 +111,14 @@ export class ChartManager {
       },
       watermark: { visible: false, text: "" },
       localization: {
-        priceFormatter: (value: number) =>
-          value.toLocaleString("en-US", {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2,
-          }),
+        priceFormatter: formatChartPrice,
       },
     });
 
     this.chart = chart;
 
     this.candleSeries = chart.addCandlestickSeries({
+      priceScaleId: "left",
       upColor: this.theme.upColor,
       downColor: this.theme.downColor,
       borderUpColor: this.theme.upColor,

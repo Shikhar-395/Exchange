@@ -1,17 +1,26 @@
 import axios from "axios";
 
 const BASE_URL = process.env.BASE_URL ?? "http://localhost:3001";
-const USER_ID = process.env.MARKET_MAKER_USER_ID ?? "5";
+const SERVICE_TOKEN = process.env.MARKET_MAKER_SERVICE_TOKEN;
+
+const orderClient = axios.create({
+  baseURL: BASE_URL,
+  headers: SERVICE_TOKEN
+    ? {
+        "x-market-maker-token": SERVICE_TOKEN,
+      }
+    : undefined,
+});
 
 const TICK_MS = Number(process.env.TICK_MS ?? 1500);
 const REAL_PRICE_REFRESH_MS = 60_000;
 const RAMP_WINDOW_MS = 60_000;
-const LADDER_LEVELS = 8;
+const LADDER_LEVELS = 4;
+const MAX_OPEN_PER_SIDE = LADDER_LEVELS;
 const LADDER_SPREAD_BPS = 25;
 const STALE_BPS = 60;
-const TAKER_MAX_QTY = 0.5;
-const TAKER_MIN_QTY = 0.05;
-const MAKER_QTY = 1;
+const TAKER_QTY = Number(process.env.MARKET_MAKER_TAKER_SIZE ?? 1);
+const MAKER_QTY = Number(process.env.MARKET_MAKER_ORDER_SIZE ?? 1);
 
 interface Ticker {
   symbol: string;
@@ -27,6 +36,7 @@ interface OpenOrder {
   orderId: string;
   side: "buy" | "sell";
   price: number | string;
+  quantity: number | string;
   market: string;
 }
 
@@ -106,9 +116,9 @@ async function getDepth(market: string): Promise<Depth | null> {
 
 async function getOpenOrders(market: string): Promise<OpenOrder[]> {
   try {
-    const { data } = await axios.get<OpenOrder[]>(
-      `${BASE_URL}/api/v1/order/open?userId=${USER_ID}&market=${market}`,
-    );
+    const { data } = await orderClient.get<OpenOrder[]>("/api/v1/order/open", {
+      params: { market },
+    });
     return data;
   } catch {
     return [];
@@ -120,7 +130,7 @@ function fmtPrice(p: number) {
 }
 
 function fmtQty(q: number) {
-  return q.toFixed(3);
+  return Math.max(1, Math.round(q)).toString();
 }
 
 async function placeOrder(
@@ -130,12 +140,11 @@ async function placeOrder(
   quantity: number,
 ) {
   try {
-    await axios.post(`${BASE_URL}/api/v1/order`, {
+    await orderClient.post("/api/v1/order", {
       market,
       price: fmtPrice(price),
       quantity: fmtQty(quantity),
       side,
-      userId: USER_ID,
     });
   } catch {
     /* engine may reject — ignore */
@@ -144,7 +153,7 @@ async function placeOrder(
 
 async function cancelOrder(market: string, orderId: string) {
   try {
-    await axios.delete(`${BASE_URL}/api/v1/order`, {
+    await orderClient.delete("/api/v1/order", {
       data: { orderId, market },
     });
   } catch {
@@ -185,36 +194,45 @@ async function tickMarket(market: string) {
 
   const staleAbs = (target * STALE_BPS) / 10_000;
   const cancels: Promise<void>[] = [];
+  const cancelledOrderIds = new Set<string>();
   for (const o of openOrders) {
     const p = Number(o.price);
+    const q = Number(o.quantity);
     const tooFar = Math.abs(p - target) > staleAbs;
+    const fractionalSize = !Number.isInteger(q) || q < 1;
     const wrongSide =
       (o.side === "buy" && p >= target) || (o.side === "sell" && p <= target);
-    if (tooFar || wrongSide || Math.random() < 0.15) {
+    if (fractionalSize || tooFar || wrongSide || Math.random() < 0.15) {
+      cancelledOrderIds.add(o.orderId);
       cancels.push(cancelOrder(market, o.orderId));
     }
   }
 
   const places: Promise<void>[] = [];
+  const activeOrders = openOrders.filter(
+    (o) => !cancelledOrderIds.has(o.orderId),
+  );
+  const activeBids = activeOrders.filter((o) => o.side === "buy").length;
+  const activeAsks = activeOrders.filter((o) => o.side === "sell").length;
+  let bidPlaces = 0;
+  let askPlaces = 0;
 
   // taker push toward target — causes trades + price move
   const diff = target - localMid;
   const driftBps = (Math.abs(diff) / target) * 10_000;
   if (driftBps > 2 && bid !== null && ask !== null) {
-    const qty = TAKER_MIN_QTY + Math.random() * (TAKER_MAX_QTY - TAKER_MIN_QTY);
     if (diff > 0) {
       // need to push up — buy at ask
-      places.push(placeOrder(market, "buy", ask * 1.0005, qty));
+      places.push(placeOrder(market, "buy", ask * 1.0005, TAKER_QTY));
     } else {
-      places.push(placeOrder(market, "sell", bid * 0.9995, qty));
+      places.push(placeOrder(market, "sell", bid * 0.9995, TAKER_QTY));
     }
   } else {
     // even at target — random taker churn for volatility
     if (bid !== null && ask !== null && Math.random() < 0.5) {
-      const qty = TAKER_MIN_QTY + Math.random() * 0.15;
       const side: "buy" | "sell" = Math.random() < 0.5 ? "buy" : "sell";
       const price = side === "buy" ? ask : bid;
-      places.push(placeOrder(market, side, price, qty));
+      places.push(placeOrder(market, side, price, TAKER_QTY));
     }
   }
 
@@ -225,9 +243,14 @@ async function tickMarket(market: string) {
     const offset = (spread * i * jitter) / LADDER_LEVELS;
     const bidPrice = target - offset;
     const askPrice = target + offset;
-    const qty = MAKER_QTY * (0.5 + Math.random());
-    places.push(placeOrder(market, "buy", bidPrice, qty));
-    places.push(placeOrder(market, "sell", askPrice, qty));
+    if (activeBids + bidPlaces < MAX_OPEN_PER_SIDE) {
+      bidPlaces++;
+      places.push(placeOrder(market, "buy", bidPrice, MAKER_QTY));
+    }
+    if (activeAsks + askPlaces < MAX_OPEN_PER_SIDE) {
+      askPlaces++;
+      places.push(placeOrder(market, "sell", askPrice, MAKER_QTY));
+    }
   }
 
   await Promise.allSettled([...cancels, ...places]);

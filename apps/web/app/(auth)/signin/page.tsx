@@ -31,7 +31,7 @@ export default function Page() {
       if (res.error) {
         toast.error(res.error.message);
       } else {
-        router.push("/markets");
+        router.push("/");
       }
     },
     onError: (err) => {

@@ -65,8 +65,9 @@ export class Orderbook {
 
     for (let i = 0; i < this.asks.length; i++) {
       const ask = this.asks[i]!;
+      const askRemaining = ask.quantity - ask.filled;
       if (ask.price <= order.price && executedQty < order.quantity) {
-        const filledQty = Math.min(order.quantity - executedQty, ask.quantity);
+        const filledQty = Math.min(order.quantity - executedQty, askRemaining);
         executedQty += filledQty;
         ask.filled += filledQty;
         fills.push({
@@ -88,10 +89,11 @@ export class Orderbook {
 
     for (let i = 0; i < this.bids.length; i++) {
       const bid = this.bids[i]!;
+      const bidRemaining = bid.quantity - bid.filled;
       if (bid.price >= order.price && executedQty < order.quantity) {
         const amountRemaining = Math.min(
           order.quantity - executedQty,
-          bid.quantity,
+          bidRemaining,
         );
         executedQty += amountRemaining;
         bid.filled += amountRemaining;
@@ -113,10 +115,12 @@ export class Orderbook {
     const asksObj: { [key: string]: number } = {};
 
     for (const order of this.bids) {
-      bidsObj[order.price] = (bidsObj[order.price] ?? 0) + order.quantity;
+      const remaining = order.quantity - order.filled;
+      bidsObj[order.price] = (bidsObj[order.price] ?? 0) + remaining;
     }
     for (const order of this.asks) {
-      asksObj[order.price] = (asksObj[order.price] ?? 0) + order.quantity;
+      const remaining = order.quantity - order.filled;
+      asksObj[order.price] = (asksObj[order.price] ?? 0) + remaining;
     }
 
     return {
