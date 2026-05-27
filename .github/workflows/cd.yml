@@ -195,14 +195,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Copy compose file to VM
+      - name: Copy compose files to VM
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USERNAME }}
           key: ${{ secrets.SSH_KEY }}
           passphrase: ${{ secrets.SSH_PASSPHRASE }}
-          source: docker/compose-files/docker-compose-deploy.yml
+          source: docker/compose-files/docker-compose-deploy.yml,docker/compose-files/Caddyfile
           target: /home/${{ secrets.SSH_USERNAME }}/exchange/
           strip_components: 2
 
@@ -226,8 +226,8 @@ jobs:
 
             export IMAGE_PREFIX="${{ env.IMAGE_PREFIX }}"
             export IMAGE_TAG="latest"
-            docker compose -f docker-compose-deploy.yml pull backend engine db-processor websocket market-maker
-            docker compose -f docker-compose-deploy.yml up -d redis timescaledb backend engine db-processor websocket market-maker
+            docker compose -f docker-compose-deploy.yml pull backend engine db-processor websocket market-maker caddy
+            docker compose -f docker-compose-deploy.yml up -d redis timescaledb backend engine db-processor websocket market-maker caddy
 
             # Wait for TimescaleDB before letting schema setup run
             until docker exec timescaledb pg_isready -U exchange; do sleep 2; done
@@ -319,7 +319,7 @@ jobs:
 
             # App containers may have been crash-looping until migrate finished.
             # Restart them once now that schema + seeds are in place.
-            docker compose -f docker-compose-deploy.yml up -d --no-deps backend engine db-processor websocket market-maker
+            docker compose -f docker-compose-deploy.yml up -d --no-deps backend engine db-processor websocket market-maker caddy
 
             sleep 10
             curl -f --retry 5 --retry-delay 3 http://localhost:3001/health || exit 1

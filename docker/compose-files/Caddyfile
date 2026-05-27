@@ -1,0 +1,7 @@
+api.exchange.shikhr.in {
+	reverse_proxy backend:3001
+}
+
+ws.exchange.shikhr.in {
+	reverse_proxy websocket:3002
+}

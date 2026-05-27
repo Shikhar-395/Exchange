@@ -90,6 +90,21 @@ services:
     depends_on:
       - backend
 
+  caddy:
+    image: caddy:2-alpine
+    container_name: caddy
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      - backend
+      - websocket
+
   web:
     profiles:
       - web
@@ -111,3 +126,5 @@ volumes:
   redis-data:
   timescale-data:
   engine-data:
+  caddy-data:
+  caddy-config:
