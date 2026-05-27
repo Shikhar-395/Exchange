@@ -269,15 +269,30 @@ function startMarketLoop(market: string) {
 }
 
 async function main() {
-  await new Promise((r) => setTimeout(r, 5000));
-  await refreshRealPrices();
-  setInterval(refreshRealPrices, REAL_PRICE_REFRESH_MS);
+  const startedMarkets = new Set<string>();
 
-  const markets = Array.from(realPrices.keys());
-  console.log(`market-maker starting on ${markets.length} markets`);
-  for (const m of markets) {
-    startMarketLoop(m);
+  const startKnownMarkets = () => {
+    for (const market of realPrices.keys()) {
+      if (startedMarkets.has(market)) continue;
+      startedMarkets.add(market);
+      startMarketLoop(market);
+      console.log(`market-maker started ${market}`);
+    }
+  };
+
+  while (startedMarkets.size === 0) {
+    await refreshRealPrices();
+    startKnownMarkets();
+    if (startedMarkets.size === 0) {
+      console.log("market-maker waiting for backend markets");
+      await new Promise((r) => setTimeout(r, 5000));
+    }
   }
+
+  setInterval(async () => {
+    await refreshRealPrices();
+    startKnownMarkets();
+  }, REAL_PRICE_REFRESH_MS);
 }
 
 main().catch((err) => {
