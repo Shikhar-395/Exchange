@@ -137,8 +137,10 @@ WAITFORIT_CHILD=${WAITFORIT_CHILD:-0}
 WAITFORIT_QUIET=${WAITFORIT_QUIET:-0}
 
 # Check to see if timeout is from busybox?
-WAITFORIT_TIMEOUT_PATH=$(type -p timeout)
-WAITFORIT_TIMEOUT_PATH=$(realpath $WAITFORIT_TIMEOUT_PATH 2>/dev/null || readlink -f $WAITFORIT_TIMEOUT_PATH)
+WAITFORIT_TIMEOUT_PATH=$(type -p timeout || true)
+if [[ -n "$WAITFORIT_TIMEOUT_PATH" ]]; then
+  WAITFORIT_TIMEOUT_PATH=$(realpath $WAITFORIT_TIMEOUT_PATH 2>/dev/null || readlink -f $WAITFORIT_TIMEOUT_PATH)
+fi
 
 WAITFORIT_BUSYTIMEFLAG=""
 if [[ $WAITFORIT_TIMEOUT_PATH =~ "busybox" ]]; then
@@ -157,7 +159,7 @@ if [[ $WAITFORIT_CHILD -gt 0 ]]; then
   WAITFORIT_RESULT=$?
   exit $WAITFORIT_RESULT
 else
-  if [[ $WAITFORIT_TIMEOUT -gt 0 ]]; then
+  if [[ $WAITFORIT_TIMEOUT -gt 0 && -n "$WAITFORIT_TIMEOUT_PATH" ]]; then
     wait_for_wrapper
     WAITFORIT_RESULT=$?
   else

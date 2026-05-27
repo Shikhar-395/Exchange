@@ -32,7 +32,7 @@ services:
       retries: 10
 
   backend:
-    image: ${IMAGE_PREFIX:-ghcr.io/shikhar/exchange}/backend:${IMAGE_TAG:-latest}
+    image: ${IMAGE_PREFIX:-ghcr.io/shikhar-395/exchange}/backend:${IMAGE_TAG:-latest}
     container_name: backend
     restart: always
     ports:
@@ -46,7 +46,7 @@ services:
         condition: service_healthy
 
   engine:
-    image: ${IMAGE_PREFIX:-ghcr.io/shikhar/exchange}/engine:${IMAGE_TAG:-latest}
+    image: ${IMAGE_PREFIX:-ghcr.io/shikhar-395/exchange}/engine:${IMAGE_TAG:-latest}
     container_name: engine
     restart: always
     env_file:
@@ -58,7 +58,7 @@ services:
         condition: service_healthy
 
   db-processor:
-    image: ${IMAGE_PREFIX:-ghcr.io/shikhar/exchange}/db-processor:${IMAGE_TAG:-latest}
+    image: ${IMAGE_PREFIX:-ghcr.io/shikhar-395/exchange}/db-processor:${IMAGE_TAG:-latest}
     container_name: db-processor
     restart: always
     env_file:
@@ -70,7 +70,7 @@ services:
         condition: service_healthy
 
   websocket:
-    image: ${IMAGE_PREFIX:-ghcr.io/shikhar/exchange}/websocket:${IMAGE_TAG:-latest}
+    image: ${IMAGE_PREFIX:-ghcr.io/shikhar-395/exchange}/websocket:${IMAGE_TAG:-latest}
     container_name: websocket
     restart: always
     ports:
@@ -82,7 +82,7 @@ services:
         condition: service_healthy
 
   market-maker:
-    image: ${IMAGE_PREFIX:-ghcr.io/shikhar/exchange}/market-maker:${IMAGE_TAG:-latest}
+    image: ${IMAGE_PREFIX:-ghcr.io/shikhar-395/exchange}/market-maker:${IMAGE_TAG:-latest}
     container_name: market-maker
     restart: always
     env_file:
@@ -91,7 +91,7 @@ services:
       - backend
 
   web:
-    image: ${IMAGE_PREFIX:-ghcr.io/shikhar/exchange}/web:${IMAGE_TAG:-latest}
+    image: ${IMAGE_PREFIX:-ghcr.io/shikhar-395/exchange}/web:${IMAGE_TAG:-latest}
     container_name: web
     restart: always
     ports:
